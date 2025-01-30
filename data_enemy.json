@@ -1,0 +1,94 @@
+{
+  "enemies": [
+    {
+      "name": "Low Rank Slime",
+      "level_range": [1, 2],
+      "hp": [20, 25],
+      "atk": [3, 5],
+      "defense": [1, 2],
+      "agility": [2, 3],
+      "skill_name": "Acid Touch",
+      "skill_desc": "Serangan memiliki efek 'corrode', mengurangi DEF lawan sebesar 1 selama 5 detik (dapat ditumpuk hingga 3 kali)."
+    },
+    {
+      "name": "Skeleton",
+      "level_range": [2, 4],
+      "hp": [40, 50],
+      "atk": [8, 12],
+      "defense": [4, 6],
+      "agility": [3, 4],
+      "skill_name": "Rusty Slash",
+      "skill_desc": "Menyerang dengan pedang berkarat, memiliki peluang 25% untuk menyebabkan 'Bleeding' (2 damage per detik selama 3 detik)."
+    },
+    {
+      "name": "Goblin",
+      "level_range": [3, 5],
+      "hp": [30, 40],
+      "atk": [7, 10],
+      "defense": [2, 4],
+      "agility": [5, 6],
+      "skill_name": "Throwing Knife",
+      "skill_desc": "Melempar belati kecil dari kejauhan, memberikan 5 damage dengan akurasi 80%."
+    },
+    {
+      "name": "Goblin Warrior",
+      "level_range": [5, 7],
+      "hp": [60, 75],
+      "atk": [10, 14],
+      "defense": [4, 6],
+      "agility": [5, 6],
+      "skill_name": "Shield Block",
+      "skill_desc": "Memiliki 25% peluang untuk memblokir serangan."
+    },
+    {
+      "name": "Medium Slime",
+      "level_range": [3, 6],
+      "hp": [80, 100],
+      "atk": [10, 15],
+      "defense": [5, 8],
+      "agility": [3, 4],
+      "skill_name": "Slam Jump",
+      "skill_desc": "Medium Slime melompat tinggi dan menghantam tanah, memberikan 15 damage ke semua musuh di sekitar dan memiliki 30% peluang untuk menyebabkan 'Stagger' (lawan kehilangan 1 giliran)."
+    },
+    {
+      "name": "Goblin Archer",
+      "level_range": [5, 6],
+      "hp": [40, 50],
+      "atk": [8, 12],
+      "defense": [2, 4],
+      "agility": [7, 8],
+      "skill_name": "Poison Arrow",
+      "skill_desc": "Panah yang memberikan 3 damage per detik selama 5 detik."
+    },
+    {
+      "name": "Skeleton Armor",
+      "level_range": [5, 9],
+      "hp": [80, 120],
+      "atk": [15, 20],
+      "defense": [15, 18],
+      "agility": [4, 5],
+      "skill_name": "Grave's Blessing",
+      "skill_desc": "Aktif - Mengaktifkan aura perlindungan yang memberikan +30 DEF dan +10 Magic Defense selama 1 turn (aktif setiap 4 turn)."
+    },
+    {
+      "name": "Goblin Captain",
+      "level_range": [7, 10],
+      "hp": [130, 150],
+      "atk": [15, 20],
+      "defense": [16, 20],
+      "agility": [9, 10],
+      "skill_name": "Counter Stance",
+      "skill_desc": "Memblokir satu serangan dan langsung membalas dengan serangan kritikal."
+    },
+    {
+      "name": "Giant Skeleton",
+      "level_range": [10, 10],
+      "hp": [300, 350],
+      "atk": [50, 60],
+      "defense": [35, 40],
+      "agility": [5, 6],
+      "skill_name": "Bone Crusher",
+      "skill_desc": "90 damage ke satu target, ada 20% chance untuk menyebabkan Stun selama 1 turn."
+    }
+  ]
+}

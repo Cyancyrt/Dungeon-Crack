@@ -1,0 +1,40 @@
+{
+  "dungeon": "1",
+  "levels": {
+    "1": {
+      "enemies": ["Low Rank Slime", "Skeleton", "Goblin"],
+      "boss": "Goblin Warrior"
+    },
+    "2": {
+      "enemies": ["Low Rank Slime", "Skeleton", "Goblin Warrior", "Goblin"],
+      "boss": "Medium Slime"
+    },
+    "3": {
+      "enemies": [
+        "Low Rank Slime",
+        "Skeleton",
+        "Goblin Warrior",
+        "Goblin Archer"
+      ],
+      "boss": "Skeleton Armor"
+    },
+    "4": {
+      "enemies": [
+        "Medium Slime",
+        "Skeleton Armor",
+        "Goblin Warrior",
+        "Goblin Archer"
+      ],
+      "boss": "Goblin Captain"
+    },
+    "5": {
+      "enemies": [
+        "Medium Slime",
+        "Skeleton Armor",
+        "Goblin Warrior",
+        "Goblin Archer"
+      ],
+      "boss": "Giant Skeleton"
+    }
+  }
+}

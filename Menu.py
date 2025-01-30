@@ -1,14 +1,16 @@
 import os
 import json
 from Player import Player, CLASSES
-
+from Fight import Game
 
 SAVE_FILE = "player_save.json"
 
+# Save player data to a file
 def save_player(player):
     with open(SAVE_FILE, "w") as file:
         json.dump(player.to_dict(), file, indent=4)
 
+# Load player data from a save file
 def load_player():
     if os.path.exists(SAVE_FILE):
         with open(SAVE_FILE, "r") as file:
@@ -16,7 +18,7 @@ def load_player():
             return Player.from_dict(data)
     return None
 
-
+# Create a new player
 def create_new_player():
     name = input("Masukkan nama karakter: ")
     print("\nPilih class karakter:")
@@ -26,6 +28,7 @@ def create_new_player():
     player_class = CLASSES[class_choice]
     return Player(name, player_class, hp=100, mp=50, attack=25, defense=15, agility=15, stamina=30, intelligence=25, crit_chance=5, crit_damage=50)
 
+# Display the main menu for game options
 def show_menu():
     while True:
         print("\n=== MENU GAME ===")
@@ -65,41 +68,16 @@ def show_menu():
         elif choice == "4":
             print("\nKeluar dari game. Sampai jumpa!")
             exit()
-        
+
         else:
             print("\nInput tidak valid! Silakan pilih lagi.")
 
-# Menampilkan menu game saat program dijalankan
-player = show_menu()
 
+# Game loop
 def game_loop(player):
-    while True:
-        print("\n=== GAME MENU ===")
-        print("Tekan 'B' untuk membuka Inventory")
-        print("Tekan 'S' untuk melihat Status Player")
-        print("Tekan 'Q' untuk keluar dari game")
-        choice = input("Pilih aksi: ")
+    game = Game('data_enemy.json', 'dungeon.json')  # Pastikan 'enemies.json' berisi data musuh
+    game.start(player)
 
-        if choice.lower() == 'b':
-            print("\n=== INVENTORY ===")
-            if player.inventory:
-                for item in player.inventory:
-                    print(item)
-            else:
-                print("Inventory kosong.")
-        
-        elif choice.lower() == 's':
-            print("\n=== STATUS PLAYER ===")
-            stats = player.display_stats()
-            for key, value in stats.items():
-                print(f"{key.capitalize()}: {value}")
-
-        elif choice.lower() == 'q':
-            print("Keluar dari game...")
-            save_player(player)
-            break
-        
-        else:
-            print("Pilihan tidak valid! Coba lagi.")
-
+# Mulai permainan
+player = show_menu()
 game_loop(player)

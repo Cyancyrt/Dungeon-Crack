@@ -42,8 +42,10 @@ class Player:
         stats = self.to_dict()
         stats["crit_chance"] = f"{self.crit_chance}%"
         stats["crit_damage"] = f"{self.crit_damage}%"
-        return stats
-
+        stats.pop("inventory", None)
+        for key, value in stats.items():
+            print(f"{key}: {value}")
+        
     def level_up(self):
         """Fungsi untuk menangani level-up pemain"""
         self.level += 1
@@ -53,7 +55,14 @@ class Player:
     def add_to_inventory(self, item):
         self.inventory.append(item)
         print(f"{item} telah ditambahkan ke inventory.")
-        
+
+    def attack_enemy(self, enemy):
+        # Menghitung damage serangan ke musuh
+        damage = self.attack - enemy.defense
+        if damage < 0:
+            damage = 0
+        enemy.hp -= damage
+        print(f"{self.name} menyerang {enemy.name} dan memberikan {damage} damage!")
     def allocate_stat_points(self):
         """Mengalokasikan stat points"""
         print(f"\nKamu memiliki {self.stat_points} poin stat untuk dialokasikan.")
