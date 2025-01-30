@@ -26,7 +26,7 @@ def create_new_player():
         print(f"{i}. {class_name}")
     class_choice = int(input("Pilih class (1-7): ")) - 1
     player_class = CLASSES[class_choice]
-    return Player(name, player_class, hp=100, mp=50, attack=25, defense=15, agility=15, stamina=30, intelligence=25, crit_chance=5, crit_damage=50)
+    return Player(name, player_class, hp=100, mp=50, attack=25, defense=15, agility=15, stamina=30, intelligence=25, crit_chance=5, crit_damage=50, exp=0, level_up_exp=100)
 
 # Display the main menu for game options
 def show_menu():

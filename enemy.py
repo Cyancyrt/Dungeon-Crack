@@ -51,6 +51,7 @@ class Enemy:
     def display_full_info(self):
         # Menampilkan detail lengkap musuh
         stats = self.to_dict()
+        stats["level"] = stats.pop("level_range", stats.get("level", "Unknown"))
         for key, value in stats.items():
             print(f"{key}: {value}")
 

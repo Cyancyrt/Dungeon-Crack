@@ -27,7 +27,15 @@ class Game:
     def choose_random_enemy(self, level):
         # Pilih musuh berdasarkan level yang diberikan
         enemies_at_level = self.dungeon_data[str(level)]['enemies']
+        boss = self.dungeon_data[str(level)]['boss']
         enemy_name = random.choice(enemies_at_level)
+
+        if boss and random.random() < 0.05:  # 5% chance
+            print("⚠️ Anda bertemu dengan BOSS LEVEL! ⚠️")
+            enemy_name = boss
+        else:
+            enemy_name = random.choice(enemies_at_level)
+
         
         # Mencocokkan nama musuh dan mengembalikan data musuh lengkap
         enemy = next((enemy for enemy in self.enemy_data if enemy['name'] == enemy_name), None)
@@ -68,6 +76,7 @@ class Game:
             elif choice.lower() == 'g':
                 self.enter_dungeon(player)
 
+
             elif choice.lower() == 'q':
                 print("Keluar dari game...")
                 break
@@ -84,8 +93,9 @@ class Game:
         while player.hp > 0:  # Selama player masih hidup
             # Buat objek Fight untuk memulai pertarungan
             fight = Fight(self)  # Pass the current Game instance to Fight
-            fight.start(player, current_level)  # Mulai pertarungan dengan player yang diberikan
-    
+            result = fight.start(player, current_level)  # Mulai pertarungan dengan player yang diberikan
+            if result == "exit_to_menu":
+                return "exit_to_menu"  # Memastikan game kembali ke menu
             # Jika player menang, lanjutkan ke pertarungan selanjutnya
             print(f"{player.name} melanjutkan ke pertarungan selanjutnya...")
 
@@ -112,8 +122,9 @@ class Fight:
             print("2. Informasi Musuh")
             print("3. Keluar Dari Pertarungan")
             print("4. Lihat Status Player")
+            print("5. Kembali ke Menu")
 
-            input_key = input("Pilih aksi (1-4): ")
+            input_key = input("Pilih aksi (1-5): ")
 
             if input_key == "1":
                 # Pemain menyerang musuh
@@ -122,6 +133,7 @@ class Fight:
                 
                 if enemy.hp <= 0:
                     print(f"{enemy.name} telah dikalahkan!")
+                    player.gain_exp(enemy.level_range)
                     break  # Musuh kalah, keluar dari loop
 
                 # Musuh membalas serangan
@@ -137,7 +149,7 @@ class Fight:
                 print(f"{player.name} memilih untuk keluar dari pertarungan...")
                 # Kurangi stamina player ketika keluar
                 if player.stamina >= 10:
-                    player.stamina -= 10  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                    player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
                     print(f"Stamina {player.name} sekarang: {player.stamina}")
                     break  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
                 else:
@@ -146,13 +158,21 @@ class Fight:
             elif input_key == '4':  # Lihat status player
                 print(f"\n=== STATUS PLAYER ===")
                 player.display_stats()
+            elif input_key == '5':  # Kembali ke menu utama
+                if player.stamina >= 10:
+                    player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                    print(f"Stamina {player.name} sekarang: {player.stamina}")
+                    return "exit_to_menu"  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
+                else:
+                    print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
+                
             else:
                 print("Aksi tidak valid, coba lagi.")
 
             # Cek status HP pemain setelah aksi
             if player.hp <= 0:
                 print(f"{player.name} kalah dalam pertarungan!")
-                break  # Pemain kalah, keluar dari loop
+                return "exit_to_menu"
 
 # # Contoh penggunaan
 # if __name__ == "__main__":
