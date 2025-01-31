@@ -1,9 +1,18 @@
 import os
 import json
-from Player_module import Player, CLASSES
+from Player_module import Player, CLASSES, Stats, World
 from Fight import Game
 
 SAVE_FILE = "player_save.json"
+
+
+def clear_console():
+    """Membersihkan terminal atau cmd"""
+    if os.name == 'nt':  # Windows
+        os.system('cls')
+    else:  # Linux/MacOS
+        os.system('clear')
+
 
 # Save player data to a file
 def save_player(player):
@@ -26,7 +35,9 @@ def create_new_player():
         print(f"{i}. {class_name}")
     class_choice = int(input("Pilih class (1-7): ")) - 1
     player_class = CLASSES[class_choice]
-    return Player(name, player_class, hp=100, mp=50, attack=25, defense=15, agility=15, stamina=30, intelligence=25, crit_chance=5, crit_damage=50)
+    stat = Stats()
+    world = World()
+    return Player(name, player_class, stat, world)
 
 # Display the main menu for game options
 def show_menu():
@@ -47,6 +58,7 @@ def show_menu():
                 print("\nTidak ada save ditemukan, membuat karakter baru...")
                 player = create_new_player()
                 save_player(player)
+                clear_console()
                 return player
 
         elif choice == "2":

@@ -2,8 +2,7 @@ import random
 import json
 import os
 from enemy import Enemy
-from Player_module import Player
-
+from Hooks import check_enemy_status
 # Game class for handling gameplay
 class Game:
     def __init__(self, enemy_file, dungeon_file):
@@ -31,7 +30,7 @@ class Game:
         boss = self.dungeon_data[str(level)]['boss']
         enemy_name = random.choice(enemies_at_level)
 
-        if boss and random.random() < 0.005:  # 5% chance
+        if boss and random.random() < 0.05:  # 5% chance
             print("⚠️ Anda bertemu dengan BOSS LEVEL! ⚠️")
             enemy_name = boss
         else:
@@ -79,11 +78,11 @@ class Game:
 
     def enter_dungeon(self, player):
         # Mulai dari level 1
-        current_level = player.current_level 
+        current_level = player.world.current_level 
         print(f"\n=== DUNGEON ===")
         print(f"Anda memasuki dungeon level {current_level}...")
 
-        while player.hp > 0:  # Selama player masih hidup
+        while player.stats.hp > 0:  # Selama player masih hidup
             # Buat objek Fight untuk memulai pertarungan
             fight = Fight(self)  # Pass the current Game instance to Fight
             result = fight.start(player, current_level)  # Mulai pertarungan dengan player yang diberikan
@@ -109,7 +108,10 @@ class Fight:
         print(f"\nAnda bertemu dengan {enemy.name}!")
         print(f"HP: {enemy.hp}, ATK: {enemy.atk}, Level: {enemy.level_range}")
         # Mulai pertarungan
-        while enemy.hp > 0 and player.hp > 0:
+        while enemy.hp > 0 and player.stats.hp > 0:
+            print(f"\n{enemy.name} bersiap untuk menyerang dengan penuh amarah!")
+            print(f"Kesehatan musuh: {enemy.hp} | Serangan musuh: {enemy.atk}")
+            # check_enemy_status(enemy)
             print("\nApa yang akan Anda lakukan?")
             print("1. Serang musuh")
             print("2. Informasi Musuh")
@@ -141,16 +143,15 @@ class Fight:
             elif input_key == '3':  # Keluar dari pertarungan
                 print(f"{player.name} memilih untuk keluar dari pertarungan...")
                 # Kurangi stamina player ketika keluar
-                if player.stamina >= 10:
-                    player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
-                    print(f"Stamina {player.name} sekarang: {player.stamina}")
+                if player.stats.stamina >= 10:
+                    player.stats.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                    print(f"Stamina {player.name} sekarang: {player.stats.stamina}")
                     break  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
                 else:
                     print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
                     
             elif input_key == '4':  # Lihat status player
                  while True:
-                    os.system('cls' if os.name == 'nt' else 'clear')
                     print(f"\n=== STATUS PLAYER ===")
                     player.display_stats()
 
@@ -162,6 +163,7 @@ class Fight:
                     
                     if choice == '1':
                         player.allocate_stat_points()  # Pastikan Anda memiliki metode ini dalam kelas Player
+                        os.system('cls' if os.name == 'nt' else 'clear')
                     elif choice == '2':
                         print("Kembali ke pertarungan...")
                         break  # Keluar dari loop dan kembali ke pertarungan
@@ -171,10 +173,10 @@ class Fight:
             elif input_key == '5':  # Kembali ke menu utama
                 confirm = input("Anda yakin ingin keluar? Ini akan menghilangkan proses Anda! (y/n): ").strip().lower()
                 if confirm == 'y':
-                    if player.stamina >= 10:
-                        player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                    if player.stats.stamina >= 10:
+                        player.stats.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
                         player.save_progress()
-                        print(f"Stamina {player.name} sekarang: {player.stamina}")
+                        print(f"Stamina {player.name} sekarang: {player.stats.stamina}")
                         return "exit_to_menu"  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
                     else:
                         print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
@@ -185,7 +187,7 @@ class Fight:
                 print("Aksi tidak valid, coba lagi.")
 
             # Cek status HP pemain setelah aksi
-            if player.hp <= 0:
+            if player.stats.hp <= 0:
                 print(f"{player.name} kalah dalam pertarungan!")
                 return "exit_to_menu"
 

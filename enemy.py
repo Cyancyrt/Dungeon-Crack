@@ -25,7 +25,7 @@ class Enemy:
         damage = max(0, damage)
 
         # Kurangi HP pemain
-        player.hp -= damage
+        player.stats.hp -= damage
         print(f"{self.name} menyerang {player.name}, mengurangi {damage} HP!")
     
     def display_basic_info(self):
@@ -54,4 +54,6 @@ class Enemy:
         stats["level"] = stats.pop("level_range", stats.get("level", "Unknown"))
         for key, value in stats.items():
             print(f"{key}: {value}")
+    
+    
 
