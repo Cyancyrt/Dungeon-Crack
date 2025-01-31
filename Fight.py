@@ -1,7 +1,8 @@
 import random
 import json
+import os
 from enemy import Enemy
-from Player import Player
+from Player_module import Player
 
 # Game class for handling gameplay
 class Game:
@@ -30,7 +31,7 @@ class Game:
         boss = self.dungeon_data[str(level)]['boss']
         enemy_name = random.choice(enemies_at_level)
 
-        if boss and random.random() < 0.05:  # 5% chance
+        if boss and random.random() < 0.005:  # 5% chance
             print("⚠️ Anda bertemu dengan BOSS LEVEL! ⚠️")
             enemy_name = boss
         else:
@@ -54,7 +55,6 @@ class Game:
         while True:
             print("\n=== GAME MENU ===")
             print("Tekan 'B' untuk membuka Inventory")
-            print("Tekan 'S' untuk melihat Status Player")
             print("Tekan 'G' untuk masuk ke dungeon")
             print("Tekan 'Q' untuk keluar dari game")
             choice = input("Pilih aksi: ")
@@ -66,13 +66,6 @@ class Game:
                         print(item)
                 else:
                     print("Inventory kosong.")
-
-            elif choice.lower() == 's':
-                print("\n=== STATUS PLAYER ===")
-                stats = player.display_stats()
-                for key, value in stats.items():
-                    print(f"{key.capitalize()}: {value}")
-
             elif choice.lower() == 'g':
                 self.enter_dungeon(player)
 
@@ -86,7 +79,7 @@ class Game:
 
     def enter_dungeon(self, player):
         # Mulai dari level 1
-        current_level = 1  
+        current_level = player.current_level 
         print(f"\n=== DUNGEON ===")
         print(f"Anda memasuki dungeon level {current_level}...")
 
@@ -156,16 +149,38 @@ class Fight:
                     print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
                     
             elif input_key == '4':  # Lihat status player
-                print(f"\n=== STATUS PLAYER ===")
-                player.display_stats()
+                 while True:
+                    os.system('cls' if os.name == 'nt' else 'clear')
+                    print(f"\n=== STATUS PLAYER ===")
+                    player.display_stats()
+
+                    print("\nPilihan:")
+                    print("1. Upgrade Stat")
+                    print("2. Kembali ke Pertarungan")
+
+                    choice = input("Pilih opsi (1/2): ").strip()
+                    
+                    if choice == '1':
+                        player.allocate_stat_points()  # Pastikan Anda memiliki metode ini dalam kelas Player
+                    elif choice == '2':
+                        print("Kembali ke pertarungan...")
+                        break  # Keluar dari loop dan kembali ke pertarungan
+                    else:
+                        print("Pilihan tidak valid. Silakan coba lagi.")
+
             elif input_key == '5':  # Kembali ke menu utama
-                if player.stamina >= 10:
-                    player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
-                    print(f"Stamina {player.name} sekarang: {player.stamina}")
-                    return "exit_to_menu"  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
+                confirm = input("Anda yakin ingin keluar? Ini akan menghilangkan proses Anda! (y/n): ").strip().lower()
+                if confirm == 'y':
+                    if player.stamina >= 10:
+                        player.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                        player.save_progress()
+                        print(f"Stamina {player.name} sekarang: {player.stamina}")
+                        return "exit_to_menu"  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
+                    else:
+                        print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
                 else:
-                    print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
-                
+                    print("Anda tetap bertahan dalam pertarungan.")
+
             else:
                 print("Aksi tidak valid, coba lagi.")
 

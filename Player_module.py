@@ -1,6 +1,8 @@
+import json
+
 CLASSES = ["Swordsman", "Lancer", "Cleric", "Mage", "Rogue", "Archer", "Warrior"]
 class Player:
-    def __init__(self, name, player_class, hp, mp, attack, defense, agility, stamina, intelligence, crit_chance, crit_damage, exp,level_up_exp, level=1, stat_points=0, inventory=None):
+    def __init__(self, name, player_class, hp, mp, attack, defense, agility, stamina, intelligence, crit_chance, crit_damage, level=1, stat_points=0,current_world=1, current_level=1, exp=0,level_up_exp=100, inventory=None):
         self.name = name
         self.player_class = player_class
         self.hp = hp
@@ -13,8 +15,18 @@ class Player:
         self.crit_chance = crit_chance
         self.crit_damage = crit_damage
         self.level = level
-        self.exp = exp
-        self.level_up_exp = level_up_exp  # EXP awal untuk naik level
+        # Set nilai maksimum
+        self.max_hp = hp
+        self.max_mp = mp
+        self.max_stamina = stamina
+
+        #world
+        self.current_world = 1  # Menyimpan world saat ini
+        self.current_level = 1  # Menyimpan level dungeon saat ini
+
+        #exp
+        self.exp = 0
+        self.level_up_exp = 100  # EXP awal untuk naik level
         self.stat_points = stat_points  # Poin yang bisa dialokasikan
         self.inventory = inventory if inventory is not None else []
 
@@ -36,13 +48,19 @@ class Player:
             "inventory": self.inventory,
             "level": self.level,
             "exp": self.exp,
-            "level_up_exp": self.level_up_exp
+            "level_up_exp": self.level_up_exp,
+            "current_world" : self.current_world,
+            "current_level" : self.current_level
         }
 
     @classmethod
     def from_dict(cls, data):
         return cls(**data)
-
+    
+    def save_progress(self):
+        with open("player_save.json", "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
+        print("✅ Progress berhasil disimpan!")
     def display_stats(self):
         stats = self.to_dict()
         stats["crit chance"] = f"{stats.pop('crit_chance', 0)}%"
@@ -64,12 +82,12 @@ class Player:
     
     def gain_exp(self, enemy_level):
         """Menambahkan EXP berdasarkan level musuh dan naik level jika perlu"""
-        base_exp = 10  # EXP dasar untuk mengalahkan musuh
+        base_exp = 15  # EXP dasar untuk mengalahkan musuh
         level_difference = enemy_level - self.level
 
         # Hitung EXP berdasarkan perbedaan level
         if level_difference > 0:  # Musuh lebih kuat
-            exp_gained = round(base_exp + (level_difference * 0.8))
+            exp_gained = round(base_exp + (level_difference * 2.5))
         elif level_difference < 0:  # Musuh lebih lemah
             exp_gained = round(max(5, base_exp + (level_difference * 5)))  # Minimum 10 EXP
         else:  # Level sama
@@ -77,6 +95,10 @@ class Player:
 
         self.exp += exp_gained
         print(f"{self.name} mendapatkan {exp_gained} EXP!")
+        self.save_progress()
+        
+        if  self.exp >= self.level_up_exp:
+            self.level_up()
 
         
     def level_up(self):
@@ -88,19 +110,27 @@ class Player:
             self.exp -= self.level_up_exp  # Reset EXP kelebihan
             self.level += 1  # Naik 1 level
             self.level_up_exp = round(self.level_up_exp * 1.33)  # EXP naik 1.33x
+
+            self.hp = self.max_hp
+            self.mp = self.max_mp
+            self.stamina = self.max_stamina
+
+            print(f"HP, MP, dan Stamina telah dipulihkan sepenuhnya.")
             print(f"Selamat! {self.name} naik ke level {self.level}!")
 
         
         print(f"EXP yang dibutuhkan untuk level berikutnya: {self.level_up_exp}")
         print(f"Stat Points tersedia: {self.stat_points}")
+        self.save_progress()
 
     def add_to_inventory(self, item):
         self.inventory.append(item)
+        self.save_progress()
         print(f"{item} telah ditambahkan ke inventory.")
 
     def attack_enemy(self, enemy):
         # Menghitung damage serangan ke musuh
-        damage = self.attack - enemy.defense
+        damage = self.attack - round((1 - (enemy.defense / 100)))
         if damage < 0:
             damage = 0
         enemy.hp -= damage
@@ -164,5 +194,6 @@ class Player:
                 break
             else:
                 print("Pilihan tidak valid! Coba lagi.")
+        self.save_progress()
     
    
