@@ -2,16 +2,9 @@ import os
 import json
 from Player_module import Player, CLASSES, Stats, World
 from Fight import Game
+from Hooks import clear_screen
 
 SAVE_FILE = "player_save.json"
-
-
-def clear_console():
-    """Membersihkan terminal atau cmd"""
-    if os.name == 'nt':  # Windows
-        os.system('cls')
-    else:  # Linux/MacOS
-        os.system('clear')
 
 
 # Save player data to a file
@@ -58,7 +51,7 @@ def show_menu():
                 print("\nTidak ada save ditemukan, membuat karakter baru...")
                 player = create_new_player()
                 save_player(player)
-                clear_console()
+                clear_screen()
                 return player
 
         elif choice == "2":

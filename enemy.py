@@ -1,14 +1,16 @@
 import random
-import json
 import random
+import math
 
 class Enemy:
     def __init__(self, name, level_range, hp, atk, defense, agility, skill_name, skill_desc):
         self.name = name
         self.level_range = level_range
         self.hp = hp
+        self.max_hp = hp
         self.atk = atk
         self.defense = defense
+        self.max_defense = defense
         self.agility = agility
         self.skill_name = skill_name
         self.skill_desc = skill_desc
@@ -17,10 +19,9 @@ class Enemy:
     # Damage yang diterima pemain
         damage = self.atk
 
-        # Jika pemain sedang bertahan, kurangi damage dengan persentase berdasarkan defense
-        if is_defending:
-            damage *= (1 - (player.defense / 100))  # Misalnya, defense mengurangi 50% damage
-
+        # kurangi damage dengan persentase berdasarkan defense
+        defense_factor = 1 - (math.log1p(player.stats.defense) / (math.log1p(1000)))  # Fungsi logaritmik
+        damage *= round(defense_factor)
         # Pastikan damage tidak kurang dari 0
         damage = max(0, damage)
 

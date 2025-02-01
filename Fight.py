@@ -1,9 +1,29 @@
 import random
 import json
-import os
+import time
+from interface import GameInterface
 from enemy import Enemy
-from Hooks import check_enemy_status
+from Hooks import clear_screen, naik_lantai
 # Game class for handling gameplay
+
+
+import time
+
+def print_sword_in_center(screen_width=30, sword_symbol="⚔️⚔️⚔️"):
+    padding = (screen_width - len(sword_symbol)) // 2
+    loading_animation()
+    print(" " * padding + sword_symbol + " " * padding)
+    # Mencetak garis pembatas bawah
+    loading_animation()
+    time.sleep(0.5)  # Waktu tunggu 0.5 detik untuk efek
+
+
+def loading_animation():
+    print("\n", end="")
+    for _ in range(30):  # Jumlah karakter "=" yang akan dicetak
+        print("=", end="", flush=True)
+        time.sleep(0.1)  # Jeda 0.1 detik antar setiap karakter
+    print()  # Pindah ke baris baru setelah selesai
 class Game:
     def __init__(self, enemy_file, dungeon_file):
         # Memuat data musuh dan dungeon
@@ -30,7 +50,7 @@ class Game:
         boss = self.dungeon_data[str(level)]['boss']
         enemy_name = random.choice(enemies_at_level)
 
-        if boss and random.random() < 0.05:  # 5% chance
+        if boss and random.random() < 0.001:  # 5% chance
             print("⚠️ Anda bertemu dengan BOSS LEVEL! ⚠️")
             enemy_name = boss
         else:
@@ -66,7 +86,9 @@ class Game:
                 else:
                     print("Inventory kosong.")
             elif choice.lower() == 'g':
+                clear_screen() 
                 self.enter_dungeon(player)
+                
 
 
             elif choice.lower() == 'q':
@@ -95,6 +117,126 @@ class Fight:
     def __init__(self, game):
         # Menyimpan instance game yang diteruskan
         self.game = game
+        self.interface = GameInterface()
+    
+    def defeated_boss(self):
+        clear_screen()
+        print("ANDA TELAH MENGALAHKAN BOSS!!!")
+        print_sword_in_center()
+        input("Tekan Enter untuk melanjutkan...")
+        
+    def status_menu(self, player):
+        while True:
+            player.display_stats()
+
+            print("\nPilihan:")
+            print("1. Upgrade Stat")
+            print("2. info skill")
+            print("3. Kembali ke Pertarungan")
+
+            choice = input("Pilih opsi (1/2/3): ").strip()
+            
+            if choice == '1':
+                player.allocate_stat_points()  # Pastikan Anda memiliki metode ini dalam kelas Player
+            elif choice == '2':
+                player.display_class_info()
+                input("\nTekan Enter untuk kembali...")
+                clear_screen()
+            elif choice == '3':
+                print("Kembali ke pertarungan...")
+                break  # Keluar dari loop dan kembali ke pertarungan
+            else:
+                print("Pilihan tidak valid. Silakan coba lagi.")
+
+    def action_menu(self, player, enemy):
+        # Menampilkan menu aksi dan memilih aksi
+        print("\nApa yang akan Anda lakukan?")
+        print("1. Serang musuh")
+        print("2. Informasi Musuh")
+        print("3. Keluar Dari Pertarungan" if not player.world.boss_defeated else "3. Naik Lantai")            
+        print("4. Lihat Status Player")
+        print("5. Kembali ke Menu")
+
+    def action_fight_menu(self, player, enemy, current_level):
+        while True:  # Loop sampai pemain memilih aksi yang valid
+            print("\nPilih aksi:")
+            print("1. Basic Attack")
+            print("2. Gunakan Skill")
+            print("3. Batalkan")
+
+            choice = input("Masukkan pilihan (1/2/3): ")
+
+            if choice == "1":
+                attack_type = "basic"
+                attack_name = "Basic Attack"
+                break  # Keluar dari loop pilihan
+            elif choice == "2":
+                attack_type = "skill"
+                attack_name = player.active_skill().get('name')
+                confirm = input(f"\nApakah Anda yakin ingin menggunakan {attack_name}? (Y/N): ").lower()
+                if confirm != "y":
+                    print("❌ Serangan dibatalkan.")
+                    input("\nTekan Enter untuk melanjutkan...")
+                    return False  # Kembali dengan indikasi pembatalan
+                break
+            elif choice == "3":
+                print("❌ Anda membatalkan serangan.")
+                input("\nTekan Enter untuk melanjutkan...")
+                return False  # Kembali dengan indikasi pembatalan
+            else:
+                print("❌ Pilihan tidak valid!")
+
+        # Konfirmasi sebelum menyerang (diletakkan di luar loop)
+        
+        # Melakukan serangan
+        if attack_type == "basic":
+            print(f"\n{player.name} menyerang {enemy.name} dengan Basic Attack!")
+            player.basic_attack(enemy)
+        elif attack_type == "skill":
+            print(f"\n{player.name} menggunakan {player.active_skill().get('name')}!")
+            player.skill_attack(enemy)
+
+        return True  # Kembali dengan indikasi aksi berhasil
+
+ 
+    
+    def action_fight(self, player, enemy, current_level):
+        turn = "player"  # Pemain mulai lebih dulu
+        turn_count = 1  # Menghitung giliran total dalam pertempuran
+
+        # Aktifkan skill pasif di awal pertarungan
+        # player.player_class.activate_passive()
+        clear_screen()
+        while player.stats.hp > 0 and enemy.hp > 0:
+            print(f"Turn {turn_count}")
+            print(f"{player.name} HP: {player.stats.hp}/{player.stats.max_hp}")
+            print(f"{enemy.name} HP: {enemy.hp}/{enemy.max_hp}")
+            print("=" * 30)
+
+            # Update cooldown skill aktif & pasif setiap giliran
+            # player.player_class.update_passive()
+            # player.player_class.active_skill.reduce_cooldown()
+
+            if turn == "player":
+                action_result = self.action_fight_menu(player, enemy, current_level)
+
+                if action_result is False:  # Jika serangan dibatalkan, jangan lanjut ke serangan musuh
+                    break
+
+                # Enemy's action (langsung setelah player menyerang)
+                print(f"\n{enemy.name} membalas serangan!")
+                enemy.attack_player(player)
+
+                if player.stats.hp <= 0:
+                    print(f"{player.name} telah dikalahkan... Game Over!")
+                    break  # Keluar dari loop karena pemain kalah
+
+                turn = "player"  # Kembali ke giliran pemain untuk turn berikutnya
+
+            # **Peningkatan Turn Counter**
+            turn_count += 1
+            input("\nTekan Enter untuk melanjutkan...")  # Memberi jeda sebelum giliran berikutnya
+            clear_screen()
 
     def start(self, player, current_level):
         # Memilih musuh secara acak menggunakan metode choose_random_enemy dari Game
@@ -106,80 +248,49 @@ class Fight:
             return
         
         print(f"\nAnda bertemu dengan {enemy.name}!")
-        print(f"HP: {enemy.hp}, ATK: {enemy.atk}, Level: {enemy.level_range}")
+        print(f"HP: {enemy.hp}, Level: {enemy.level_range}")
         # Mulai pertarungan
         while enemy.hp > 0 and player.stats.hp > 0:
+            print("\n=== PERTARUNGAN ===")
             print(f"\n{enemy.name} bersiap untuk menyerang dengan penuh amarah!")
-            print(f"Kesehatan musuh: {enemy.hp} | Serangan musuh: {enemy.atk}")
+            print(f"HP musuh: {enemy.hp} | level musuh: {enemy.atk}")
             # check_enemy_status(enemy)
-            print("\nApa yang akan Anda lakukan?")
-            print("1. Serang musuh")
-            print("2. Informasi Musuh")
-            print("3. Keluar Dari Pertarungan")
-            print("4. Lihat Status Player")
-            print("5. Kembali ke Menu")
+            self.action_menu(player, enemy)
 
-            input_key = input("Pilih aksi (1-5): ")
+            input_key = self.interface.get_user_input("Pilih aksi (1-5): ")
 
             if input_key == "1":
                 # Pemain menyerang musuh
-                print(f"{player.name} menyerang {enemy.name}!")
-                player.attack_enemy(enemy)
-                
-                if enemy.hp <= 0:
-                    print(f"{enemy.name} telah dikalahkan!")
-                    player.gain_exp(enemy.level_range)
-                    break  # Musuh kalah, keluar dari loop
-
-                # Musuh membalas serangan
-                enemy.attack_player(player)
-                print(f"{enemy.name} membalas serangan!")
-
+                self.action_fight(player, enemy, current_level)
             elif input_key == "2":
                 # Menampilkan detail informasi musuh
                 print(f"\n=== DETAIL INFO {enemy.name} ===")
                 Enemy.display_full_info(enemy)
                 
             elif input_key == '3':  # Keluar dari pertarungan
-                print(f"{player.name} memilih untuk keluar dari pertarungan...")
-                # Kurangi stamina player ketika keluar
-                if player.stats.stamina >= 10:
-                    player.stats.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
-                    print(f"Stamina {player.name} sekarang: {player.stats.stamina}")
-                    break  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
+                if player.world.boss_defeated:
+                    naik_lantai(player, current_level)
+                    break  # Keluar dari loop pertarungan
                 else:
-                    print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
+                    print(f"{player.name} memilih untuk keluar dari pertarungan...")
+                    # Kurangi stamina player ketika keluar
+                    if player.stats.stamina >= 10:
+                        player.stats.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
+                        print(f"Stamina {player.name} sekarang: {player.stats.stamina}")
+                        break  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
+                    else:
+                        print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
                     
             elif input_key == '4':  # Lihat status player
-                 while True:
-                    print(f"\n=== STATUS PLAYER ===")
-                    player.display_stats()
-
-                    print("\nPilihan:")
-                    print("1. Upgrade Stat")
-                    print("2. Kembali ke Pertarungan")
-
-                    choice = input("Pilih opsi (1/2): ").strip()
+                clear_screen()
+                self.status_menu(player)
                     
-                    if choice == '1':
-                        player.allocate_stat_points()  # Pastikan Anda memiliki metode ini dalam kelas Player
-                        os.system('cls' if os.name == 'nt' else 'clear')
-                    elif choice == '2':
-                        print("Kembali ke pertarungan...")
-                        break  # Keluar dari loop dan kembali ke pertarungan
-                    else:
-                        print("Pilihan tidak valid. Silakan coba lagi.")
 
             elif input_key == '5':  # Kembali ke menu utama
                 confirm = input("Anda yakin ingin keluar? Ini akan menghilangkan proses Anda! (y/n): ").strip().lower()
                 if confirm == 'y':
-                    if player.stats.stamina >= 10:
-                        player.stats.stamina -= 5  # Gantilah angka 10 dengan nilai stamina yang sesuai
-                        player.save_progress()
-                        print(f"Stamina {player.name} sekarang: {player.stats.stamina}")
+                        clear_screen()
                         return "exit_to_menu"  # Keluar dari pertarungan dan kembali ke dungeon atau menu utama
-                    else:
-                        print(f"{player.name} tidak memiliki cukup stamina untuk keluar dari pertarungan.")
                 else:
                     print("Anda tetap bertahan dalam pertarungan.")
 
@@ -190,9 +301,3 @@ class Fight:
             if player.stats.hp <= 0:
                 print(f"{player.name} kalah dalam pertarungan!")
                 return "exit_to_menu"
-
-# # Contoh penggunaan
-# if __name__ == "__main__":
-#     player = Player(name="Hero", hp=100, atk=15, stamina=50)
-#     game = Game('data_enemy.json', 'dungeon.json')
-#     game.start(player)

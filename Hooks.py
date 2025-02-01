@@ -18,9 +18,10 @@ def clear_screen():
     """Membersihkan layar cmd."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def tampilkan_riwayat(riwayat):
-    """Menampilkan riwayat terbaru dan menghapus riwayat lama."""
-    clear_screen()  # Bersihkan layar sebelum menampilkan riwayat baru
-    print("batas aktivitas terbaru =================================")
-    print(riwayat)  # Tampilkan riwayat terbaru
-    print("\n")  # Beri jarak untuk aktivitas selanjutnya
+def naik_lantai(player, current_level):
+    print("Apakah Anda ingin naik ke lantai berikutnya? (Y/N)")
+    choice = input("\nPilih aksi (Y untuk naik, N untuk tetap): ").lower()
+    if choice == 'y':
+        player.floor_up()
+    else:
+        print(f"{player.name} memilih untuk tetap di lantai {current_level}.")
