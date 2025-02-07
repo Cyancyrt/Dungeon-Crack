@@ -1,0 +1,30 @@
+{
+  "Battle Instinct": {
+    "description": "Ketika memulai pertarungan, Mendapatkan +5% STR dan +10 DEF selama 2 turn.",
+    "duration": 2,
+    "cooldown": 2,
+    "activation_condition": ["on_battle_start"],
+    "effect": {
+      "attack_bonus": {
+        "amount": 5,
+        "bonus_type": "percentage"
+      },
+      "defense_bonus": {
+        "amount": 10,
+        "bonus_type": "flat"
+      }
+    }
+  },
+  "Mana Surge": {
+    "description": "Setiap kali membunuh musuh, memulihkan 10% dari mana yang telah digunakan.",
+    "duration": 0,
+    "cooldown": 0,
+    "activation_condition": ["enemy_defeat"],
+    "effect": {
+      "mana_restore": {
+        "amount": 20,
+        "restore_type": "percentage"
+      }
+    }
+  }
+}

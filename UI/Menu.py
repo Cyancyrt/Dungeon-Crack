@@ -1,8 +1,8 @@
 import os
 import json
-from Player_module import Player, CLASSES, Stats, World
-from Fight import Game
-from Hooks import clear_screen
+import time
+from Player.Player_module import Player, CLASSES, Stats, World
+from UI.Hooks import clear_screen
 
 SAVE_FILE = "player_save.json"
 
@@ -32,6 +32,14 @@ def create_new_player():
     world = World()
     return Player(name, player_class, stat, world)
 
+def loading_screen():
+    border = "═" * 25
+    for char in border:
+        print(char, end="", flush=True)
+        time.sleep(0.05)
+    print()
+    time.sleep(1)
+
 # Display the main menu for game options
 def show_menu():
     while True:
@@ -46,6 +54,9 @@ def show_menu():
             player = load_player()
             if player:
                 print(f"\nMemuat game... Selamat datang kembali, {player.name}!")
+                loading_screen()
+ 
+                clear_screen()
                 return player
             else:
                 print("\nTidak ada save ditemukan, membuat karakter baru...")
@@ -78,11 +89,4 @@ def show_menu():
             print("\nInput tidak valid! Silakan pilih lagi.")
 
 
-# Game loop
-def game_loop(player):
-    game = Game('data_enemy.json', 'dungeon.json')  # Pastikan 'enemies.json' berisi data musuh
-    game.start(player)
 
-# Mulai permainan
-player = show_menu()
-game_loop(player)

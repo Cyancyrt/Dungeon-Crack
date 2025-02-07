@@ -1,0 +1,16 @@
+{
+  "Power Slash": {
+    "description": "Meluncurkan serangan yang memberikan 140% damage (+Attack) ke musuh.",
+    "cooldown": 2,
+    "stamina_cost": 5,
+    "damage_multiplier": 1.4,
+    "aoe": true
+  },
+  "Fireball": {
+    "description": "Menyerang musuh dengan bola api, memberikan 160% magic damage.",
+    "cooldown": 3,
+    "damage_multiplier": 1.6,
+    "mana_cost": 10,
+    "aoe": false
+  }
+}

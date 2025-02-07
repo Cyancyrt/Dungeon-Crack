@@ -1,24 +1,24 @@
 import json
 import random
 import math
-from Class_player import load_character_class
+from Player.Class_player import load_character_class
+from UI.Hooks import clear_screen
 
 CLASSES = ["Swordsman", "Lancer", "Cleric", "Mage", "Rogue", "Archer", "Warrior"]
 
 
 class Stats:
-    def __init__(self, hp=100, mp=50, attack=25, defense=15, agility=15,luck=0, stamina=30, intelligence=25, accuracy=20, crit_damage=50,  max_hp=None, max_mp=None, max_stamina=None):
+    def __init__(self, hp=100, mp=50, attack=25, defense=15, agility=15, luck=0, stamina=30, accuracy=20, crit_damage=50,  max_hp=None, max_mp=None, max_stamina=None):
         self.hp = hp
         self.mp = mp
         self.attack = attack
         self.defense = defense
         self.agility = agility
         self.stamina = stamina
-        self.intelligence = intelligence
         self.accuracy = accuracy
         self.crit_damage = crit_damage
         self.agility = agility
-        self.luck = 0
+        self.luck = luck
         # Pastikan max_hp, max_mp, dan max_stamina menerima nilai yang diberikan
         self.max_hp = max_hp if max_hp is not None else hp
         self.max_mp = max_mp if max_mp is not None else mp
@@ -37,10 +37,9 @@ class Stats:
             "defense": self.defense,
             "agility": self.agility,
             "stamina": self.stamina,
-            "intelligence": self.intelligence,
+            "luck": self.luck,
             "accuracy": self.accuracy,
             "crit_damage": self.crit_damage,
-            "luck": self.luck,
             "max_hp": self.max_hp,
             "max_mp": self.max_mp,
             "max_stamina": self.max_stamina
@@ -70,12 +69,15 @@ class Player:
         self.player_class = player_class
         self.stats = stats  # Use Stats instance
         self.world = world  # Use World instance
-        self.level = level  # Tambahkan level
+        self.level = level
         self.exp = exp
         self.level_up_exp = level_up_exp
         self.stat_points = stat_points
         self.inventory = inventory if inventory is not None else []
         self.skill = load_character_class(player_class)
+
+        self.active_skill = self.skill.active_skill
+        self.passive_skills = self.skill.passive_skill  # Sekarang bisa punya banyak skill pasif
 
 
 
@@ -103,6 +105,7 @@ class Player:
         return cls(name=data['name'],
                    player_class=data['player_class'],
                    stats=stats,
+                   level=data['level'],
                    world=world,
                    exp=data['exp'],
                    level_up_exp=data['level_up_exp'],
@@ -120,12 +123,6 @@ class Player:
         character_class = self.skill
         # Tampilkan informasi class
         character_class.display_info()
-
-    def floor_up(self):
-        self.world.current_level += 1  # Naik ke lantai berikutnya
-        self.world.boss_defeated = False
-        self.save_progress()
-        print(f"\n\n{self.name} naik ke lantai {self.world.current_level}!")
         
     def display_stats(self):
         stats = self.to_dict()
@@ -134,9 +131,13 @@ class Player:
         # Format level info
         stats['level'] = f"{stats.get('level', 1)} ({stats.pop('exp', 0)}/{stats.pop('level_up_exp', 100)})"
         
+        # Hitung Crit Chance
+        n = player_stats.get('accuracy', 0) // 10
+        player_stats['crit_chance'] = f"{round((n * (n + 1)) // 1.5)}%"
+        
         # Format player stats
-        for attr in ['accuracy', 'crit_damage']:
-            player_stats[attr] = f"{player_stats.get(attr, 0)}%"
+        for attr in ['accuracy', 'crit_damage']:  
+            player_stats[attr] = f"{round(float(player_stats.get(attr, 0)))}%"
         for attr in ['hp', 'mp', 'stamina']:
             player_stats[attr] = f"{player_stats.get(attr, 0)} / {player_stats.pop(f'max_{attr}', 0)}"
         
@@ -151,11 +152,6 @@ class Player:
         stat_items = list({**stats, **player_stats, **world_info}.items())
         half = len(stat_items) // 2
 
-        # Print stats with player name centered
-        max_len = max(len(item[0]) for item in stat_items)  # Find the max length of stat names
-        middle_len = len("player class") + len(self.name) + 2  # Calculate space for the player name
-
-        # Calculate the total width of the display
         # Each column has a width of 15 (stat name) + 10 (stat value) + 4 (padding and separator)
         column_width = 15 + 10 + 4
         total_width = column_width * 2  # Total width of the display
@@ -169,26 +165,88 @@ class Player:
         print(f"{'':<{name_padding}}{self.name.upper()}{'':<{name_padding}}")
 
         for left, right in zip(stat_items[:half], stat_items[half:]):
-            print(f"{left[0].replace('_', ' '):<15}: {left[1]:<10}  |  {right[0].replace('_', ' '):<15}: {right[1]}")
+            print(f"{left[0].replace('_', ' '):<15}: {left[1]:<15}  |  {right[0].replace('_', ' '):<15}: {right[1]}")
         if len(stat_items) % 2:
             print(f"{stat_items[-1][0].replace('_', ' '):<15}: {stat_items[-1][1]}")
-
-
-
-
-
-
     
+    def allocate_stat_points(self):
+        """Mengalokasikan stat points ke atribut utama"""
+        if self.stat_points <= 0:
+            print(f"Maaf, {self.name}, Anda tidak memiliki poin untuk dialokasikan.")
+            input("\nTekan Enter untuk melanjutkan...")
+            clear_screen()
+            return
+
+        print(f"\nKamu memiliki {self.stat_points} poin stat untuk dialokasikan.")
+        
+        stats_map = {
+            "1": ("strength", "STR - Meningkatkan Attack & Crit chance"), 
+            "2": ("vitality", "VIT - Meningkatkan Max HP & Defense"), 
+            "3": ("dexterity", "DEX - Meningkatkan Agility, Accuracy & Luck"), 
+            "4": ("intelligence", "INT - Meningkatkan Max MP & Stamina")
+        }
+        
+        temp_allocations = {"strength": 0, "vitality": 0, "dexterity": 0, "intelligence": 0}
+
+        while self.stat_points > 0:
+            print("\nPilih atribut utama yang ingin ditingkatkan:")
+            for k, v in stats_map.items():
+                print(f"{k}. {v[1]}")
+            print("5. Selesai alokasikan poin stat.")
+
+            choice = input("Pilih (1-5): ")
+            if choice == "5":
+                break
+            if choice in stats_map:
+                attr, name = stats_map[choice]
+                temp_allocations[attr] += 1
+                self.stat_points -= 1
+                print(f"{name} telah ditingkatkan!")
+            else:
+                print("Pilihan tidak valid! Coba lagi.")
+
+        # Update stat turunan berdasarkan alokasi sementara
+        self.apply_stat_changes(temp_allocations)
+        self.save_progress()
+
+    def apply_stat_changes(self, allocations):
+        """Menerapkan perubahan stat dari alokasi sementara"""
+        stat_effects = {
+            "vitality": {"max_hp": 10, "defense": 2},
+            "intelligence": {"max_mp": 10, "attack": 2},
+            "strength": {"attack": 2, "accuracy": 3, "crit_damage": 0.5},
+            "dexterity": {"agility": 2, "accuracy": 2, "luck": 1, "stamina": 2}
+        }
+
+        for attr, points in allocations.items():
+            for stat, multiplier in stat_effects[attr].items():
+                setattr(self.stats, stat, (getattr(self.stats, stat) + points * multiplier))  # Update stats sesuai alokasi
+
+
+
+
+
+
+
+
+
+
+    def floor_up(self):
+        self.world.current_level += 1  # Naik ke lantai berikutnya
+        self.world.boss_defeated = False
+        self.save_progress()
+        print(f"\n\n{self.name} naik ke lantai {self.world.current_level}!")    
     def gain_exp(self, enemy_level):
         """Menambahkan EXP berdasarkan level musuh dan naik level jika perlu"""
-        base_exp = 15  # EXP dasar untuk mengalahkan musuh
+        base_exp = 10  # EXP dasar untuk mengalahkan musuh
+        base_exp = round(base_exp + (enemy_level-1) * 2.5)
         level_difference = enemy_level - self.level
 
         # Hitung EXP berdasarkan perbedaan level
         if level_difference > 0:  # Musuh lebih kuat
             exp_gained = round(base_exp + (level_difference * 2.5))
         elif level_difference < 0:  # Musuh lebih lemah
-            exp_gained = round(max(5, base_exp + (level_difference * 5)))  # Minimum 10 EXP
+            exp_gained = round(max(base_exp, base_exp + (level_difference * 5)))  # Minimum 10 EXP
         else:  # Level sama
             exp_gained = base_exp
 
@@ -199,7 +257,6 @@ class Player:
         if  self.exp >= self.level_up_exp:
             self.level_up()
 
-        
     def level_up(self):
         """Meningkatkan level pemain dan mengatur ulang EXP ke 0."""
 
@@ -212,7 +269,7 @@ class Player:
 
             self.stats.restore()
 
-            print(f"HP, MP, dan Stamina telah dipulihkan sepenuhnya.")
+            print(f"\nHP, MP, dan Stamina telah dipulihkan sepenuhnya.")
             print(f"Selamat! {self.name} naik ke level {self.level}!")
 
         
@@ -225,84 +282,73 @@ class Player:
         self.save_progress()
         print(f"{item} telah ditambahkan ke inventory.")
 
-    def active_skill(self):
-        character_class = self.skill
-        data_skill = character_class.to_dict().get('active_skill', {})
-        return data_skill
+
+
+
     
-    def passive_skill(self):
+
+    
+    def activate_passive_skill(self):
         character_class = self.skill
-        data_skill = character_class.to_dict().get('passive_skill', {})
-        return data_skill
+        character_class.activate_passive()
+
+    def reset_skill_cooldown(self):
+        self.skill.active_skill.reset_cooldown()
+
+    def update_passive_skill(self):
+        character_class = self.skill
+        character_class.update_passive(self)
 
     def crit_chance(self, damage):
-        crit_c = min(round(self.stats.accuracy/4.5),85)
+        n = self.stats.accuracy // 10
+        crit_c = round((n * (n + 1)) // 1.5)
         if random.randint(1, 100) <= crit_c:
             crit_multiplier = self.stats.crit_damage / 100 
             damage *= (1 + crit_multiplier)  # Kalikan dengan bonus critical
             print("Critical Hit!")  # Indikasi serangan critical
         return damage
-    def damage_calc(self, damage_mult):
+    def damage_calc(self, damage_mult=1):
         damage = self.stats.attack *  damage_mult # Hitung damage awal
         # Cek apakah serangan critical
         damage = self.crit_chance(damage)
         return round(damage)  # Bulatkan damage
     
-    def defense_calc(self, damage):
-        defense_factor = 1 - (math.log1p(self.stats.defense) / (math.log1p(1000)))  # Fungsi logaritmik
-        damage *= round(defense_factor)
-        return damage
+
+    def defense_calc(self, enemy, damage):
+        damage_reduction = math.ceil(enemy.defense * 0.25)
+        damage_taken = max(damage - damage_reduction, 0)  # Pastikan damage tidak negatif
     
-    def skill_attack(self, enemy):
+        return damage_taken
+    
+    def activate_skill_attack(self, enemy):
         damage_mult = self.skill.use_active_skill()
+        if damage_mult:
+        # Kurangi mana jika ada mana_cost
+            print("Mana cost:", self.skill.active_skill.mana_cost)
+            if self.skill.active_skill.mana_cost > 0:
+                self.stats.mp -= self.skill.active_skill.mana_cost
+            
+            # Kurangi stamina jika ada stamina_cost
+            if self.skill.active_skill.stamina_cost > 0:
+                self.stats.stamina -= self.skill.active_skill.stamina_cost
+                
         damage_calc = self.damage_calc(damage_mult)
-        damage_akhir = self.defense_calc(damage_calc)
+        damage_akhir = self.defense_calc(enemy,damage_calc)
         if damage_akhir < 0:
             damage_akhir = 0
         enemy.hp -= damage_akhir
         print(f"{self.name} menyerang {enemy.name} dan memberikan {damage_akhir} damage!")
         self.skill.active_skill.reduce_cooldown()
-        # return
+
+
     def basic_attack(self, enemy):
-        damage = self.stats.attack
-        damage = self.damage_calc(damage)
+        damage_calc = self.damage_calc()
         # Menghitung damage serangan ke musuh
-        defense_factor = 1 - (math.log1p(enemy.defense) / (math.log1p(1000)))  # Fungsi logaritmik
-        damage *= round(defense_factor)
-        if damage < 0:
-            damage = 0
-        enemy.hp -= damage
-        print(f"{self.name} menyerang {enemy.name} dan memberikan {damage} damage!")
+        damage_akhir = self.defense_calc(enemy,damage_calc)
+        if damage_akhir < 0:
+            damage_akhir = 0
+        enemy.hp -= damage_akhir
+        print(f"{self.name} menyerang {enemy.name} dan memberikan {damage_akhir} damage!")
     
 
-    def allocate_stat_points(self):
-        """Mengalokasikan stat points"""
-        if self.stat_points <= 0:
-            print(f"Maaf, {self.name}, Anda tidak memiliki poin untuk dialokasikan.")
-            return
-
-        print(f"\nKamu memiliki {self.stat_points} poin stat untuk dialokasikan.")
-        stats_map = {
-            "1": ("max_hp", 10), "2": ("max_mp", 10), "3": ("attack", 10), "4": ("defense", 10),
-            "5": ("agility", 8), "6": ("stamina", 10), "7": ("intelligence", 8),
-            "8": ("accuracy", 2)
-        }
-
-        while self.stat_points > 0:
-            print("\nPilih stat yang ingin ditingkatkan:")
-            for k, v in stats_map.items():
-                print(f"{k}. {v[0].capitalize()}")
-            print("10. Selesai alokasikan poin stat.")
-            
-            choice = input("Pilih (1-10): ")
-            if choice == "10":
-                break
-            if choice in stats_map:
-                attr, value = stats_map[choice]
-                setattr(self.stats, attr, getattr(self.stats, attr) + value)
-                self.stat_points -= 1
-                print(f"{attr.replace('_', ' ').capitalize()} +{value}")
-            else:
-                print("Pilihan tidak valid! Coba lagi.")
-        
-        self.save_progress()
+    

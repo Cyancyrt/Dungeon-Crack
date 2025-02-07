@@ -1,0 +1,12 @@
+{
+  "classes": {
+    "Swordsman": {
+      "active_skill": "Power Slash",
+      "passive_skill": "Battle Instinct"
+    },
+    "Mage": {
+      "active_skill": "Fireball",
+      "passive_skill": "Mana Surge"
+    }
+  }
+}
