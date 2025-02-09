@@ -1,29 +1,35 @@
-from Player.Class_player import PassiveSkillHandler
+from Player.Class.Passive_skill import PassiveSkillHandler
+from Player.Class.Active_Skill import ActiveSkillHandler
 import time
-from UI.Hooks import clear_screen
+from UI.Hooks import clear_screen, naik_lantai
 
 
 class BattleSystem:
-    def __init__(self, player, enemy, event_dispatcher):
+    def __init__(self, player, enemy):
         self.player = player
         self.enemy = enemy
-        self.event_dispatcher = event_dispatcher
+        self.event_dispatcher = player.event_dispatcher
         self.turn_count = 1  # Simpan turn count sebagai atribut
-        self.passive_skill_handler = PassiveSkillHandler(player, event_dispatcher)
+        self.passive_skill_handler = PassiveSkillHandler(player, player.event_dispatcher)
+        self.active_skill_handler = ActiveSkillHandler(player, player.event_dispatcher)
 
-    def start_battle(self):
+
+    def start_battle(self, games, current_level):
         """Mulai pertempuran"""
         if self.turn_count == 1 and not self.event_dispatcher.is_event_triggered("game_start"):
-            print(not self.event_dispatcher.is_event_triggered("game_start"))
             self.event_dispatcher.dispatch_event("game_start")
         while self.player.stats.hp > 0 and self.enemy.hp > 0:
             self.display_battle_status(self.turn_count)
             action =  self.handle_turn()
             if action == "exit_to_menu":
                 break
-            self.passive_skill_handler.update_all_skills(self.event_dispatcher)
+            self.event_dispatcher.dispatch_event("turn_end")
             self.turn_count += 1  # Increment turn count tanpa reset
+
             if self.enemy.hp <= 0 or self.player.stats.hp <= 0:
+                if self.enemy.name == games.game.dungeon_data[str(current_level)]['boss']:
+                    games.defeated_boss()
+                    self.player.world.boss_defeated = True
                 self.event_dispatcher.dispatch_event("battle_end")  # 🔥 Trigger event sebelum keluar
                 break  # Keluar dari loop untuk memproses akhir pertempuran
         
@@ -32,7 +38,7 @@ class BattleSystem:
         # clear_screen()
         
         if self.enemy.hp <= 0:
-            self.enemy_defeated()
+            self.enemy_defeated(games, current_level)
         elif self.player.stats.hp <= 0:
             self.player_defeated()
 
@@ -66,11 +72,14 @@ class BattleSystem:
         
         return True
 
-    def enemy_defeated(self):
+    def enemy_defeated(self, games, current_level):
         """Penanganan saat musuh dikalahkan"""
+        
         print(f"\n{self.enemy.name} telah mati!")
-        self.player.gain_exp(self.enemy.level)
         self.event_dispatcher.dispatch_event("enemy_defeat")
+        if self.enemy.name == games.game.dungeon_data[str(current_level)]['boss']:
+            naik_lantai(self.player, current_level)
+        self.player.gain_exp(self.enemy.level)
         self.event_dispatcher.reset_events()
         input("\nTekan Enter untuk melanjutkan...")
         clear_screen()
@@ -90,7 +99,7 @@ class BattleSystem:
                 break  # Keluar dari loop pilihan
             elif choice == "2":
                 attack_type = "skill"
-                attack_name = player.active_skill.name
+                attack_name = player.active_skills.name
                 confirm = input(f"\nApakah Anda yakin ingin menggunakan {attack_name}? (Y/N): ").lower()
                 if confirm != "y":
                     print("❌ Serangan dibatalkan.")
@@ -107,7 +116,7 @@ class BattleSystem:
             print(f"\n{player.name} menyerang {enemy.name} dengan Basic Attack!")
             player.basic_attack(enemy)
         elif attack_type == "skill":
-            print(f"\n{player.name} menggunakan {player.active_skill.name}!")
+            print(f"\n{player.name} menggunakan {player.active_skills.name}!")
             player.activate_skill_attack(enemy)
         
 

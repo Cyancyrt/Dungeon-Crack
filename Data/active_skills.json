@@ -2,15 +2,79 @@
   "Power Slash": {
     "description": "Meluncurkan serangan yang memberikan 140% damage (+Attack) ke musuh.",
     "cooldown": 2,
-    "stamina_cost": 5,
     "damage_multiplier": 1.4,
     "aoe": true
   },
+  "Triple Jab": {
+    "description": "Melakukan serangan tiga kali ke satu musuh, memberikan 140% damage (+Attack) dan mengurangi pertahanan target sebanyak 2 selama 5 turn.",
+    "cooldown": 2,
+    "damage_multiplier": 1.2,
+    "aoe": false,
+    "effects": [
+      {
+        "type": "defense_down",
+        "value": 2,
+        "duration": 5,
+        "stackable": false
+      }
+    ]
+  },
+  "Low Healing": {
+    "description": "Menghasilkan cahaya penyembuhan yang memulihkan 10 HP pemain.",
+    "mana_cost": 10,
+    "aoe": false,
+    "heal": 10
+  },
   "Fireball": {
-    "description": "Menyerang musuh dengan bola api, memberikan 160% magic damage.",
-    "cooldown": 3,
+    "description": "Menyerang musuh dengan bola api, memberikan 160% fire damage.",
+    "cooldown": 2,
     "damage_multiplier": 1.6,
     "mana_cost": 10,
-    "aoe": false
+    "aoe": false,
+    "effects": [
+      {
+        "type": "burn",
+        "duration": 2
+      }
+    ]
+  },
+  "Stealth": {
+    "description": "Menjadi tidak terlihat selama 1 turn, menghindari semua serangan musuh.",
+    "mana_cost": 10,
+    "cooldown": 1,
+    "aoe": false,
+    "effects": [
+      {
+        "type": "invisible",
+        "duration": 1
+      }
+    ]
+  },
+  "Eagle Eye": {
+    "description": "Ketika skill ini diaktifkan, serangan berikutnya memberikan 200% dari serangan pemain ke satu target musuh.",
+    "cooldown": 4,
+    "mana_cost": 25,
+    "aoe": false,
+    "effects": [
+      {
+        "type": "attack_bonus",
+        "value": 200,
+        "bonus_type": "percentage",
+        "duration": 1
+      }
+    ]
+  },
+  "Barrier": {
+    "description": "Mengaktifkan perisai yang memblokir 200 damage dan meningkatkan pertahanan sebesar 10 selama perisai aktif.",
+    "cooldown": 2,
+    "shield": 200,
+    "aoe": false,
+    "effects": [
+      {
+        "type": "defense_bonus",
+        "value": 10,
+        "condition": "while_shield_active"
+      }
+    ]
   }
 }

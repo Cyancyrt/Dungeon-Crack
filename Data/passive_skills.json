@@ -1,29 +1,97 @@
 {
   "Battle Instinct": {
-    "description": "Ketika memulai pertarungan, Mendapatkan +5% STR dan +10 DEF selama 2 turn.",
+    "description": "Ketika memulai pertarungan, Mendapatkan +10% STR dan +5 DEF selama 2 turn.",
     "duration": 2,
     "cooldown": 2,
     "activation_condition": ["on_battle_start"],
     "effect": {
       "attack_bonus": {
-        "amount": 5,
+        "amount": 10,
         "bonus_type": "percentage"
       },
       "defense_bonus": {
+        "amount": 5,
+        "bonus_type": "flat"
+      }
+    }
+  },
+  "Swift Reflex": {
+    "description": "Setelah memberikan damage, mendapatkan +2% Critical Chance dan +2 Agility selama 2 turn.",
+    "duration": 2,
+    "cooldown": 0,
+    "activation_condition": ["on_attack"],
+    "effect": {
+      "accucary_bonus": {
+        "amount": 5,
+        "bonus_type": "percentage"
+      },
+      "agility_bonus": {
+        "amount": 2,
+        "bonus_type": "flat"
+      }
+    }
+  },
+  "Force Boost": {
+    "description": "Meningkatkan serangan sebesar 10 selama 2 turn.",
+    "duration": 2,
+    "cooldown": 0,
+    "activation_condition": ["on_battle_start"],
+    "effect": {
+      "attack_bonus": {
         "amount": 10,
         "bonus_type": "flat"
       }
     }
   },
   "Mana Surge": {
-    "description": "Setiap kali membunuh musuh, memulihkan 10% dari mana yang telah digunakan.",
+    "description": "Setiap kali membunuh musuh, memulihkan 10 MP.",
     "duration": 0,
     "cooldown": 0,
     "activation_condition": ["enemy_defeat"],
     "effect": {
       "mana_restore": {
-        "amount": 20,
-        "restore_type": "percentage"
+        "amount": 10,
+        "restore_type": "flat"
+      }
+    }
+  },
+  "Final Blow": {
+    "description": "Ketika musuh di bawah 10% HP, meningkatkan Crit Chance menjadi 100%.",
+    "duration": 0,
+    "cooldown": 0,
+    "activation_condition": { "enemy_hp_threshold": 10 },
+    "effect": {
+      "crit_chance_bonus": {
+        "amount": 100,
+        "bonus_type": "percentage"
+      }
+    }
+  },
+  "Marksmanship": {
+    "description": "Setiap 2 turn, mengurangi pertahanan musuh sebesar 5. Dapat ditumpuk.",
+    "duration": 0,
+    "cooldown": 0,
+    "activation_condition": {
+      "turn_interval": 2
+    },
+    "effect": {
+      "enemy_defense_reduction": {
+        "amount": 5,
+        "bonus_type": "flat",
+        "stackable": "True"
+      }
+    }
+  },
+  "Iron Will": {
+    "description": "Setiap kali terkena serangan, meningkatkan pertahanan sebesar 3. Dapat ditumpuk.",
+    "duration": 0,
+    "cooldown": 0,
+    "activation_condition": ["on_hit"],
+    "effect": {
+      "defense_bonus": {
+        "amount": 3,
+        "bonus_type": "flat",
+        "stackable": "True"
       }
     }
   }

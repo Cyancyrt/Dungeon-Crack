@@ -1,5 +1,6 @@
 
 import os
+import re
 
 def check_enemy_status(enemy):
     """Menampilkan status musuh berdasarkan persentase HP yang tersisa."""
@@ -26,10 +27,26 @@ def naik_lantai(player, current_level):
     else:
         print(f"{player.name} memilih untuk tetap di lantai {current_level}.")
 
+def get_stat_from_effect(effect_type):
+    """Mencari stat dasar dari nama efek menggunakan pola regex"""
+    patterns = {
+        "attack": r"attack",     # Semua efek yang mengandung "attack"
+        "defense": r"defense",   # Semua efek yang mengandung "defense"
+        "speed": r"speed",       # Jika ada efek kecepatan
+        "critical": r"crit|critical",  # Bisa menangkap "crit_up", "critical_increase"
+        "hp": r"hp|health"  # Bisa menangkap "hp_boost", "health_regen"
+    }
+
+    for stat, pattern in patterns.items():
+        if re.search(pattern, effect_type):
+            return stat  # Kembalikan nama stat yang sesuai
+
+    return None
+
 class EventDispatcher:
     def __init__(self):
         self.event_handlers = {}
-        self.triggered_events = set()  # Menyimpan event yang sudah terjadi
+        self.triggered_events = set({"turn_end"})  # Menyimpan event yang sudah terjadi
 
     def register_event(self, event_type, handler):
         """Mendaftarkan handler untuk suatu event"""

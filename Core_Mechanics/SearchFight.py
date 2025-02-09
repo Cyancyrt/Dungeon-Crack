@@ -51,7 +51,7 @@ class Game:
         boss = self.dungeon_data[str(level)]['boss']
         enemy_name = random.choice(enemies_at_level)
 
-        if boss and random.random() < 0.001:  # 5% chance
+        if boss and random.random() < 0.005:  # 5% chance
             print("⚠️ Anda bertemu dengan BOSS LEVEL! ⚠️")
             enemy_name = boss
         else:
@@ -135,7 +135,7 @@ class Fight:
             if choice == '1':
                 player.allocate_stat_points()
             elif choice == '2':
-                player.display_class_info()
+                player.stat_handler.display_class_info()
                 input("\nTekan Enter untuk kembali...")
                 clear_screen()
             elif choice == '3':
@@ -155,7 +155,7 @@ class Fight:
         if input_key == "1":
             self.display_start_fight(enemy)
             clear_screen()
-            self.action.start_battle()
+            self.action.start_battle(self, current_level)
         elif input_key == "2":
             print(f"\n=== DETAIL INFO {enemy.name} ===")
             Enemy.display_full_info(enemy)
@@ -230,8 +230,7 @@ class Fight:
             return
         
         self.battle_intro(enemy)
-        event_dispatcher = EventDispatcher()  # Atau inisialisasi sesuai kebutuhan
-        self.action = BattleSystem(player, enemy, event_dispatcher)
+        self.action = BattleSystem(player, enemy)
 
         while enemy.hp > 0 and player.stats.hp > 0:
             self.display_start_fight(enemy)

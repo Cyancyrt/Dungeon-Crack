@@ -2,13 +2,14 @@ import os
 import json
 import time
 from Player.Player_module import Player, CLASSES, Stats, World
-from UI.Hooks import clear_screen
+from UI.Hooks import clear_screen, EventDispatcher
 
-SAVE_FILE = "player_save.json"
-
+SAVE_FOLDER = os.path.join(os.getcwd(), "player/data")
+SAVE_FILE = os.path.join(SAVE_FOLDER, "player_save.json")
 
 # Save player data to a file
 def save_player(player):
+    os.makedirs(SAVE_FOLDER, exist_ok=True)  # Buat folder jika belum ada
     with open(SAVE_FILE, "w") as file:
         json.dump(player.to_dict(), file, indent=4)
 
@@ -24,13 +25,23 @@ def load_player():
 def create_new_player():
     name = input("Masukkan nama karakter: ")
     print("\nPilih class karakter:")
-    for i, class_name in enumerate(CLASSES, 1):
-        print(f"{i}. {class_name}")
-    class_choice = int(input("Pilih class (1-7): ")) - 1
+    while True:
+        for i, class_name in enumerate(CLASSES, 1):
+            print(f"{i}. {class_name}")
+
+        choice = input("Pilih class (1-7): ").strip()  # Hapus spasi ekstra
+
+        if choice.isdigit():  # Pastikan input adalah angka
+            class_choice = int(choice) - 1
+            if 0 <= class_choice < len(CLASSES):  # Validasi rentang pilihan
+                break  # Keluar dari loop jika pilihan valid
+        
+        print("Pilihan tidak valid! Silakan pilih ulang.")
     player_class = CLASSES[class_choice]
     stat = Stats()
     world = World()
-    return Player(name, player_class, stat, world)
+    event_dispatcher = EventDispatcher()
+    return Player(name, player_class, stat, world, event_dispatcher)
 
 def loading_screen():
     border = "═" * 25
@@ -61,6 +72,7 @@ def show_menu():
             else:
                 print("\nTidak ada save ditemukan, membuat karakter baru...")
                 player = create_new_player()
+                print(player)
                 save_player(player)
                 clear_screen()
                 return player

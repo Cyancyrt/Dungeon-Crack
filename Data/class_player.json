@@ -4,9 +4,29 @@
       "active_skill": "Power Slash",
       "passive_skill": "Battle Instinct"
     },
+    "Lancer": {
+      "active_skill": "Triple Jab",
+      "passive_skill": "Swift Reflex"
+    },
+    "Cleric": {
+      "active_skill": "Low Healing",
+      "passive_skill": "Force Boost"
+    },
     "Mage": {
       "active_skill": "Fireball",
       "passive_skill": "Mana Surge"
+    },
+    "Rogue": {
+      "active_skill": "Stealth",
+      "passive_skill": "Final Blow"
+    },
+    "Archer": {
+      "active_skill": "Eagle Eye",
+      "passive_skill": "Marksmanship"
+    },
+    "Warrior": {
+      "active_skill": "Barrier",
+      "passive_skill": "Iron Will"
     }
   }
 }
