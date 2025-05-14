@@ -1,9 +1,9 @@
 
 from Player.Player_Handler import StatHandler, LevelHandler, SkillHandler, CombatHandler, InventoryHandler
 from Player.Class.Class_player import load_character_class
-from Player.Class.Active_Skill import ActiveSkillHandler
-from Player.Class.Passive_skill import PassiveSkillHandler
-from UI.Hooks import EventDispatcher
+from Player.Class.Active.Active_SkillHandler import ActiveSkillHandler
+from Player.Class.Passive.Passive_SkillHandler import PassiveSkillHandler
+from Hooks.Event_Dispatch import EventDispatcher
 
 
 CLASSES = ["Swordsman", "Lancer", "Cleric", "Mage", "Rogue", "Archer", "Warrior"]
@@ -18,6 +18,7 @@ class Stats:
         self.agility = agility
         self.stamina = stamina
         self.accuracy = accuracy
+        self.crit_chance = round(((accuracy/10) * ((accuracy/10) + 1)) // 1.5)
         self.crit_damage = crit_damage
         self.agility = agility
         self.luck = luck
@@ -78,13 +79,16 @@ class Player:
         self.active_skills = self.player_class.active_skill
         self.passive_skills = self.player_class.passive_skill  # Sekarang bisa punya banyak skill pasif
         self.event_dispatcher = event_dispatcher
+        self.passive_skill_handler = PassiveSkillHandler(self, self.event_dispatcher)
+        self.active_skill_handler = ActiveSkillHandler(self, self.event_dispatcher)
 
          # 🔥 Tambahkan handler untuk active dan passive skill
-        self.active_skill_handler = ActiveSkillHandler(self,event_dispatcher)
 
 
 
         self.buffs = {}
+        self.debuffs = {}
+        
         # 🔥 Handler untuk mengelompokkan fitur
         self.stat_handler = StatHandler(self)
         self.level_handler = LevelHandler(self)
@@ -129,6 +133,7 @@ class Player:
     def allocate_stat_points(self):
         self.stat_handler.allocate_stat_points()
     
+    
     def gain_exp(self, enemy_level):
         self.level_handler.gain_exp(enemy_level)
 
@@ -138,11 +143,7 @@ class Player:
     def add_to_inventory(self, item):
         self.inventory_handler.add_item(item)
 
-    def basic_attack(self, enemy):
-        self.combat_handler.basic_attack(enemy)
 
-    def activate_skill_attack(self, enemy):
-        self.combat_handler.activate_skill_attack(enemy)
 
 
 

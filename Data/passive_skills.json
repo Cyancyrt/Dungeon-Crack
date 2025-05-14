@@ -16,29 +16,31 @@
     }
   },
   "Swift Reflex": {
-    "description": "Setelah memberikan damage, mendapatkan +2% Critical Chance dan +2 Agility selama 2 turn.",
-    "duration": 2,
-    "cooldown": 0,
-    "activation_condition": ["on_attack"],
+    "description": "Setelah memberikan damage, mendapatkan +2% Critical Chance, +2 Agility selama 2 turn.",
+    "duration": 1,
+    "cooldown": 2,
+    "activation_condition": ["on_enemy_hit", "next_turn"],
     "effect": {
-      "accucary_bonus": {
-        "amount": 5,
-        "bonus_type": "percentage"
+      "crit_chance_bonus": {
+        "amount": 2,
+        "bonus_type": "flat",
+        "stackable": "False"
       },
       "agility_bonus": {
         "amount": 2,
-        "bonus_type": "flat"
+        "bonus_type": "flat",
+        "stackable": "False"
       }
     }
   },
   "Force Boost": {
-    "description": "Meningkatkan serangan sebesar 10 selama 2 turn.",
+    "description": "Meningkatkan serangan sebesar +7 selama 2 turn.",
     "duration": 2,
     "cooldown": 0,
     "activation_condition": ["on_battle_start"],
     "effect": {
       "attack_bonus": {
-        "amount": 10,
+        "amount": 7,
         "bonus_type": "flat"
       }
     }
@@ -56,14 +58,14 @@
     }
   },
   "Final Blow": {
-    "description": "Ketika musuh di bawah 10% HP, meningkatkan Crit Chance menjadi 100%.",
+    "description": "Ketika musuh di bawah 25% HP, meningkatkan Crit Chance menjadi lebih dari 30%.",
     "duration": 0,
     "cooldown": 0,
-    "activation_condition": { "enemy_hp_threshold": 10 },
+    "activation_condition": { "enemy_hp_threshold": 25 },
     "effect": {
       "crit_chance_bonus": {
-        "amount": 100,
-        "bonus_type": "percentage"
+        "amount": 30,
+        "bonus_type": "flat"
       }
     }
   },
@@ -75,8 +77,10 @@
       "turn_interval": 2
     },
     "effect": {
-      "enemy_defense_reduction": {
+      "defense_reduction": {
+        "target": "enemy",
         "amount": 5,
+        "duration": 0,
         "bonus_type": "flat",
         "stackable": "True"
       }
@@ -86,7 +90,7 @@
     "description": "Setiap kali terkena serangan, meningkatkan pertahanan sebesar 3. Dapat ditumpuk.",
     "duration": 0,
     "cooldown": 0,
-    "activation_condition": ["on_hit"],
+    "activation_condition": ["on_player_hit"],
     "effect": {
       "defense_bonus": {
         "amount": 3,

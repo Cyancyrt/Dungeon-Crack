@@ -1,123 +1,162 @@
-from Player.Class.Passive_skill import PassiveSkillHandler
-from Player.Class.Active_Skill import ActiveSkillHandler
-import time
-from UI.Hooks import clear_screen, naik_lantai
+import traceback
+from Hooks.Hooks import clear_screen, naik_lantai, check_enemy_status
+from UI.Battle_ui import BattleUI
+from Exception.battle_exception import InvalidActionChoice, ActionCancelled, BattleEnded
 
 
 class BattleSystem:
     def __init__(self, player, enemy):
         self.player = player
         self.enemy = enemy
+        self.turn_count = 1
         self.event_dispatcher = player.event_dispatcher
-        self.turn_count = 1  # Simpan turn count sebagai atribut
-        self.passive_skill_handler = PassiveSkillHandler(player, player.event_dispatcher)
-        self.active_skill_handler = ActiveSkillHandler(player, player.event_dispatcher)
-
+        self.passive_skill_handler = player.passive_skill_handler
+        self.active_skill_handler = player.active_skill_handler
 
     def start_battle(self, games, current_level):
-        """Mulai pertempuran"""
-        if self.turn_count == 1 and not self.event_dispatcher.is_event_triggered("game_start"):
-            self.event_dispatcher.dispatch_event("game_start")
-        while self.player.stats.hp > 0 and self.enemy.hp > 0:
-            self.display_battle_status(self.turn_count)
-            action =  self.handle_turn()
-            if action == "exit_to_menu":
-                break
-            self.event_dispatcher.dispatch_event("turn_end")
-            self.turn_count += 1  # Increment turn count tanpa reset
+        if self.turn_count == 1 and "battle_start" not in self.event_dispatcher.triggered_events:
+            try:
+                self.event_dispatcher.dispatch_event("battle_start")
+            except Exception as e:
+                print(f"[ERROR] dispatch_event('battle_start'): {e}")
+                traceback.print_exc()
 
-            if self.enemy.hp <= 0 or self.player.stats.hp <= 0:
+        try:
+            while self.player.stats.hp > 0 and self.enemy.stats.hp > 0:
+                try:
+                    self.event_dispatcher.dispatch_event("turn_interval", turn=self.turn_count, object=self.enemy)
+                    BattleUI.display_battle_status(self.player, self.enemy, self.turn_count)
+                    action = self.handle_turn()
+                    if action == "exit_to_menu":
+                        break
+                    self.event_dispatcher.dispatch_event("turn_end")
+                    self.turn_count += 1
+                except BattleEnded:
+                    raise
+                except Exception as e:
+                    print(f"[ERROR] selama turn: {e}")
+                    traceback.print_exc()
+                    break
+        except BattleEnded:
+            try:
                 if self.enemy.name == games.game.dungeon_data[str(current_level)]['boss']:
                     games.defeated_boss()
                     self.player.world.boss_defeated = True
-                self.event_dispatcher.dispatch_event("battle_end")  # 🔥 Trigger event sebelum keluar
-                break  # Keluar dari loop untuk memproses akhir pertempuran
-        
-        
-        # input("\nTekan Enter untuk melanjutkan...")  # Memberi jeda sebelum giliran berikutnya
-        # clear_screen()
-        
-        if self.enemy.hp <= 0:
-            self.enemy_defeated(games, current_level)
-        elif self.player.stats.hp <= 0:
-            self.player_defeated()
+                self.event_dispatcher.dispatch_event("battle_end")
+            except Exception as e:
+                print(f"[ERROR] setelah BattleEnded: {e}")
+                traceback.print_exc()
 
-    def display_battle_status(self, turn_count):
-        """Menampilkan status pertempuran saat ini"""
-        print(f"Turn {turn_count}")
-        print(f"Player:   {self.player.name} HP: {self.player.stats.hp}/{self.player.stats.max_hp}")
-        print(f"enemy:    {self.enemy.name} HP: {self.enemy.hp}/{self.enemy.max_hp}")
-        print("=" * 30)
+        try:
+            if self.enemy.stats.hp <= 0:
+                self.enemy_defeated(games, current_level)
+            elif self.player.stats.hp <= 0:
+                self.player_defeated()
+        except Exception as e:
+            print(f"[ERROR] after battle resolution: {e}")
+            traceback.print_exc()
 
-    def display_fight_menu(self):
-        print("\nPilih aksi:")
-        print("1. Basic Attack")
-        print("2. Gunakan Skill")
-        print("3. Batalkan")
 
     def handle_turn(self):
-        """Menangani logika setiap giliran"""
-        if self.enemy.hp <= 0:
-            return
-        action_result = self.action_fight_menu(self.player, self.enemy)
-        if action_result is False:
-            return "exit_to_menu"   # Jika serangan dibatalkan, jangan lanjut ke serangan musuh
+        if self.enemy.stats.hp <= 0:
+            raise BattleEnded
 
-        self.enemy.attack_player(self.player)  # Serangan musuh setelah pemain
-        input("\nTekan Enter untuk melanjutkan...")
-        clear_screen()
+        try:
+            self.action_fight_menu()
+        except ActionCancelled:
+            return "exit_to_menu"
+        except InvalidActionChoice as e:
+            print(f"[ERROR] InvalidActionChoice: {e}")
+            return "exit_to_menu"
+        except Exception as e:
+            print(f"[ERROR] handle_turn(): {e}")
+            traceback.print_exc()
+            return "exit_to_menu"
+
+        try:
+            enemy_status = check_enemy_status(
+                self.enemy,
+                self.event_dispatcher.dispatch_event,
+                self.passive_skill_handler
+            )
+            if enemy_status == "enemy_died":
+                raise BattleEnded
+                return  # 🛑 Tambahkan return agar tidak lanjut ke bawah
+        except BattleEnded:
+            raise  # Propagasi ke start_battle
+        except Exception as e:
+            print(f"[ERROR] check_enemy_status: {e}")
+            traceback.print_exc()
+            return
+
+        try:
+            self.enemy.attack_player(self.player)
+            self.event_dispatcher.dispatch_event("player_hit")
+            input("\nTekan Enter untuk melanjutkan...")
+            clear_screen()
+        except Exception as e:
+            print(f"[ERROR] enemy attack/player_hit: {e}")
+            traceback.print_exc()
 
         if self.player.stats.hp <= 0:
-            return
-        
+            raise BattleEnded
+
         return True
 
+    def action_fight_menu(self):
+        while True:
+            try:
+                BattleUI.display_fight_menu()
+                choice = input("Masukkan pilihan (1/2/3): ")
+                if choice == "1":
+                    print(f"\n{self.player.name} menyerang {self.enemy.name} dengan Basic Attack!")
+                    self.player.combat_handler.basic_attack(self.enemy)
+                    break
+                elif choice == "2":
+                    attack_name = self.player.active_skills.name
+                    confirm = input(f"\nGunakan {attack_name}? (Y/N): ").lower()
+                    if confirm != "y":
+                        print("\n❌ Serangan dibatalkan.")
+                        raise ActionCancelled
+                    print(f"\n{self.player.name} menggunakan {attack_name}!")
+                    self.player.combat_handler.skill_attack(self.enemy)
+                    break
+                elif choice == "3":
+                    print("\n❌ Anda membatalkan serangan.")
+                    raise ActionCancelled
+                else:
+                    print("❌ Pilihan tidak valid!")
+                    raise InvalidActionChoice("Pilihan tidak tersedia dalam menu pertarungan.")
+            except (InvalidActionChoice, ActionCancelled):
+                raise  # Lempar ulang agar handle_turn bisa mengatasi
+            except Exception as e:
+                print(f"[ERROR] action_fight_menu: {e}")
+                traceback.print_exc()
+
+        try:
+            self.event_dispatcher.dispatch_event("enemy_hit")
+        except Exception as e:
+            print(f"[ERROR] dispatch_event('enemy_hit'): {e}")
+            traceback.print_exc()
+
     def enemy_defeated(self, games, current_level):
-        """Penanganan saat musuh dikalahkan"""
-        
-        print(f"\n{self.enemy.name} telah mati!")
-        self.event_dispatcher.dispatch_event("enemy_defeat")
-        if self.enemy.name == games.game.dungeon_data[str(current_level)]['boss']:
-            naik_lantai(self.player, current_level)
-        self.player.gain_exp(self.enemy.level)
-        self.event_dispatcher.reset_events()
-        input("\nTekan Enter untuk melanjutkan...")
-        clear_screen()
+        try:
+            print(f"\n{self.enemy.name} telah mati!")
+            self.event_dispatcher.dispatch_event("enemy_defeat")
+            self.enemy.mark_as_dead()
+
+            if self.enemy.name == games.game.dungeon_data[str(current_level)]['boss']:
+                naik_lantai(self.player, current_level)
+            self.player.gain_exp(self.enemy.level)
+            input("\nTekan Enter untuk melanjutkan...")
+            clear_screen()
+        except Exception as e:
+            print(f"[ERROR] enemy_defeated: {e}")
+            traceback.print_exc()
 
     def player_defeated(self):
-        """Penanganan saat pemain kalah"""
-        print(f"{self.player.name} telah dikalahkan... Game Over!")
-
-    def action_fight_menu(self, player, enemy):  
-        while True:  # Loop sampai pemain memilih aksi yang valid
-            self.display_fight_menu()
-            choice = input("Masukkan pilihan (1/2/3): ")
-
-            if choice == "1":
-                attack_type = "basic"
-                attack_name = "Basic Attack"
-                break  # Keluar dari loop pilihan
-            elif choice == "2":
-                attack_type = "skill"
-                attack_name = player.active_skills.name
-                confirm = input(f"\nApakah Anda yakin ingin menggunakan {attack_name}? (Y/N): ").lower()
-                if confirm != "y":
-                    print("❌ Serangan dibatalkan.")
-                    return False  # Kembali dengan indikasi pembatalan
-                break
-            elif choice == "3":
-                print("❌ Anda membatalkan serangan.")
-                return False  # Kembali dengan indikasi pembatalan
-            else:
-                print("❌ Pilihan tidak valid!")
-
-        # Melakukan serangan
-        if attack_type == "basic":
-            print(f"\n{player.name} menyerang {enemy.name} dengan Basic Attack!")
-            player.basic_attack(enemy)
-        elif attack_type == "skill":
-            print(f"\n{player.name} menggunakan {player.active_skills.name}!")
-            player.activate_skill_attack(enemy)
-        
-
-        return True  # Kembali dengan indikasi aksi berhasil
+        try:
+            print(f"{self.player.name} telah dikalahkan... Game Over!")
+        except Exception as e:
+            print(f"[ERROR] player_defeated: {e}")
+            traceback.print_exc()

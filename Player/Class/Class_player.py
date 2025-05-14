@@ -1,5 +1,5 @@
-from Player.Class.Active_Skill import ActiveSkill
-from Player.Class.Passive_skill import PassiveSkill
+from Player.Class.Active.Active_Skill import ActiveSkill
+from Player.Class.Passive.Passive_Skill import PassiveSkill
 from Player.Class.Loader import load_class, load_active_skills, load_passive_skills
 
 
@@ -26,8 +26,8 @@ class CharacterClass:
         print(f"Skill Name      : {self.active_skill.name}")
         print(f"Description     : {self.active_skill.description}")
         print(f"Cooldown        : {self.active_skill.cooldown} turn(s)")
+        print(f"Mana Cost       : {self.active_skill.mana_cost}")
         print(f"AOE             : {'Yes' if self.active_skill.aoe else 'No'}")
-        print(f"Damage Multiplier : {self.active_skill.damage_multiplier * 100}%\n")
         for skill in self.passive_skill:
             print(f"{separator}\nPASSIVE SKILL\n{separator}")
             print(f"Skill Name      : {skill.name}")
@@ -82,6 +82,7 @@ def load_character_class(class_name):
         active_skill_data["cooldown"],
         active_skill_data["damage_multiplier"],
         active_skill_data["aoe"],
+        active_skill_data["effects"],
         mana_cost=active_skill_data.get("mana_cost", 0),  # Pastikan default ke 0
         stamina_cost=active_skill_data.get("stamina_cost", 0)  # Pastikan default ke 0
     )

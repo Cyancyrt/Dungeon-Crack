@@ -1,5 +1,5 @@
 from UI.Menu import show_menu
-from Core_Mechanics.SearchFight import Game
+from Core_Mechanics.Main import Game 
 
 
 # Game loop

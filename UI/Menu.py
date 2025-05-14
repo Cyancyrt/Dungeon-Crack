@@ -2,7 +2,8 @@ import os
 import json
 import time
 from Player.Player_module import Player, CLASSES, Stats, World
-from UI.Hooks import clear_screen, EventDispatcher
+from Hooks.Hooks import clear_screen
+from Hooks.Event_Dispatch import EventDispatcher
 
 SAVE_FOLDER = os.path.join(os.getcwd(), "player/data")
 SAVE_FILE = os.path.join(SAVE_FOLDER, "player_save.json")

@@ -1,6 +1,6 @@
 import random
 import math
-from UI.Hooks import clear_screen
+from Hooks.Hooks import clear_screen, remove_effect
 import UI.Menu as menu
 
 
@@ -21,8 +21,8 @@ class StatHandler:
         stats['level'] = f"{stats.get('level', 1)} ({stats.pop('exp', 0)}/{stats.pop('level_up_exp', 100)})"
         
         # Hitung Crit Chance
-        n = player_stats.get('accuracy', 0) / 10
-        player_stats['crit_chance'] = f"{round((n * (n + 1)) // 1.5)}%"
+        
+        player_stats['crit_chance'] = f"{self.player.stats.crit_chance}%"
         
         # Format player stats
         for attr in ['accuracy', 'crit_damage']:  
@@ -167,21 +167,18 @@ class SkillHandler:
         self.passive_skill = player.passive_skills
         self.active_skill = player.active_skills
 
-    def use_active_skill(self):
-        return self.player.active_skill_handler.use_skill(self.active_skill.name)
-    
-    def update_active(self):
-        return self.player.active_skill_handler.reduce_cooldown()
+    def use_active_skill(self, enemy):
+        return self.player.active_skill_handler.use_skill(self.active_skill.name, enemy)
     
     def reset_passive(self, player):
         if not isinstance(self.passive_skill, list):
             self.passive_skill = [self.passive_skill]  # Ubah menjadi list jika hanya satu skill
-
+        expired_buffs = list(player.buffs.keys())
+        
+        for effect_type in expired_buffs:
+            remove_effect(player, effect_type)
         # Loop untuk mereset semua skill pasif
         for skill in self.passive_skill:
-            if not skill.effect_removed:  # 🔥 Pastikan efek hanya dihapus sekali
-                skill._remove_effect(player)
-                skill.effect_removed = True
             skill.is_active = False
             skill.reset_cooldown_and_duration()
     
@@ -192,14 +189,6 @@ class SkillHandler:
         # Loop untuk memperbarui semua skill pasif
         for skill in self.passive_skill:
             skill.update(player)
-
-    def activate_passive(self):
-        if not isinstance(self.passive_skill, list):
-            self.passive_skill = [self.passive_skill]  # Ubah menjadi list jika hanya satu skill
-
-        # Loop untuk mengaktifkan semua skill pasif
-        for skill in self.passive_skill:
-            skill.activate()
 
 
 
@@ -216,9 +205,7 @@ class CombatHandler:
         self.player = player
 
     def crit_chance(self, damage):
-        n = self.player.stats.accuracy / 10
-        crit_c = round((n * (n + 1)) // 1.5)
-        if random.randint(1, 100) <= crit_c:
+        if random.randint(1, 100) <= self.player.stats.crit_chance:
             crit_multiplier = self.player.stats.crit_damage / 100 
             damage *= (1 + crit_multiplier)  # Kalikan dengan bonus critical
             print("Critical Hit!")  # Indikasi serangan critical
@@ -231,28 +218,32 @@ class CombatHandler:
         return round(damage)  # Bulatkan damage
     
 
-    def defense_calc(self, enemy, damage):
-        damage_reduction = math.ceil(enemy.defense * 0.25)
+    def defense_calc(self, enemy, damage, damage_reduksi=0):
+        damage_reduction = math.ceil(enemy.stats.defense * (damage_reduksi + 0.05))
         damage_taken = max(damage - damage_reduction, 0)  # Pastikan damage tidak negatif
     
         return damage_taken
     
-    def activate_skill_attack(self, enemy):
-        damage_mult = self.player.skill_handler.use_active_skill()
-        if damage_mult:
-        # Kurangi mana jika ada mana_cost
+    def skill_attack(self, enemy):
+        damage_mult = self.player.skill_handler.use_active_skill(enemy)
+        damage_reduksi = 0
+        if damage_mult > 0:
             if self.player.active_skills.mana_cost > 0:
                 self.player.stats.mp -= self.player.active_skills.mana_cost
             
             # Kurangi stamina jika ada stamina_cost
             if self.player.active_skills.stamina_cost > 0:
                 self.player.stats.stamina -= self.player.active_skills.stamina_cost
+            
+            if enemy.buffs.get("damage_reduction"):
+                damage_reduksi = enemy.buffs["damage_reduction"].get("amount", 0)
+                
                 
         damage_calc = self.damage_calc(damage_mult)
-        damage_akhir = self.defense_calc(enemy,damage_calc)
+        damage_akhir = self.defense_calc(enemy,damage_calc, damage_reduksi)
         if damage_akhir < 0:
             damage_akhir = 0
-        enemy.hp -= damage_akhir
+        enemy.stats.hp = max(0, enemy.stats.hp - damage_akhir)
         print(f"{self.player.name} menyerang {enemy.name} dan memberikan {damage_akhir} damage!")
 
 
@@ -262,6 +253,6 @@ class CombatHandler:
         damage_akhir = self.defense_calc(enemy,damage_calc)
         if damage_akhir < 0:
             damage_akhir = 0
-        enemy.hp -= damage_akhir
+        enemy.stats.hp = max(0, enemy.stats.hp - damage_akhir)
         print(f"{self.player.name} menyerang {enemy.name} dan memberikan {damage_akhir} damage!")
     
