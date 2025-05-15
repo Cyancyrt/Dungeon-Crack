@@ -4,11 +4,9 @@ class PassiveSkill:
     def __init__(self, name, description, effect_duration, cooldown, activation_condition, effect):
         self.name = name
         self.description = description
-        self.effect_duration = effect_duration
+        self.duration = effect_duration
         self.cooldown = cooldown
         self.activation_condition = activation_condition
-        self.remaining_duration = 0
-        self.remaining_cooldown = 0
         self.effect = effect  # Simpan semua efek dalam dictionary
         self.is_active = False
         self.is_stack = False

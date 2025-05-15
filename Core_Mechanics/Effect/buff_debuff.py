@@ -152,8 +152,6 @@ class Buff(StatusHandler):
         effect_value = {**effect_value, "amount": bonus_value}
         Buff._apply_buff(effect_type, effect_value, target)  # Kirim angka, bukan dict
         target.stats.agility += bonus_value
-        print(f"[DEBUG] {effect_type} triggered on {target.name} by {amount}%")
-        print(target.stats.agility, " : agility")
 
     @staticmethod
     def _boost_def(effect_type, effect_value,target, **kwargs):
@@ -173,8 +171,6 @@ class Buff(StatusHandler):
     def _apply_buff(effect_type, effect_values,target, **kwargs):
         if effect_type not in target.buffs:
             target.buffs[effect_type] = {}  # Simpan buff sebagai angka, bukan list atau dict
-        # Tambahkan flag "just_applied" ke dalam effect_values
-        effect_values["just_applied"] = True  # Tandai bahwa efek ini baru saja diterapkan
         target.buffs[effect_type] = effect_values
     
    

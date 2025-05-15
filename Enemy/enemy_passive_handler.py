@@ -45,12 +45,12 @@ class Enemy_passive:
         if self.isDeath:
             return  # Musuh sudah mati, tidak perlu membersihkan efek
         if self.enemy.buffs:
-            for effect_type, bonus in self.enemy.buffs.items():
+            for effect_type, bonus in list(self.enemy.debuffs.items()): 
                 if bonus.get("duration", 0) > 0:
                     remove_effect(self.enemy, effect_type)
                     
         if self.enemy.debuffs:
-            for effect_type, penalty in self.enemy.debuffs.items():
-                if penalty.get("duration", 0) > 0:
+            for effect_type, bonus in list(self.enemy.debuffs.items()):  # pakai list() agar aman
+                if bonus.get("duration", 0) > 0:
                     remove_effect(self.enemy, effect_type)
 

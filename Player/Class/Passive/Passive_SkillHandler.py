@@ -1,6 +1,7 @@
 from Hooks.Hooks import after_effect
 from Core_Mechanics.Effect.buff_debuff import StatusHandler, Buff, Debuff
 from Hooks.Hooks import remove_effect
+import copy
 from Exception.battle_exception import EventNotRegisteredError, InvalidSkillEffect, SkillHandlerNotFoundError
 
 class PassiveSkillHandler:
@@ -35,7 +36,6 @@ class PassiveSkillHandler:
         try:
             for skill in self.passive_skills:
                 name = skill.name  # akses menggunakan dot notation
-
                 # Kurangi durasi aktif
                 if self.durations.get(name, 0) > 0:
                     self.durations[name] -= 1
@@ -49,13 +49,9 @@ class PassiveSkillHandler:
 
             for effect_type, bonus in list(self.player.buffs.items()):
                 if bonus.get("duration", 0) > 0:
-                    print(bonus.get("just_applied"))
-                    if bonus.get("just_applied"):
-                        bonus["just_applied"] = False  # Hanya set sekali
-                    else :
-                        bonus["duration"] -= 1
-                        if bonus["duration"] == 0:
-                            remove_effect(self.player, effect_type)
+                    bonus["duration"] -= 1
+                    if bonus["duration"] == 0:
+                        remove_effect(self.player, effect_type)
 
             for effect_type, bonus in list(self.player.debuffs.items()):
                 if bonus.get("duration", 0) > 0:
@@ -66,7 +62,20 @@ class PassiveSkillHandler:
         except Exception as e:
             raise RuntimeError(f"[ERROR] Failed to update passive skills: {e}")
         
+    def reset_passive(self):
+        self.cooldowns = {}
+        self.durations = {}
+        self.ActivatedPassive.clear()
 
+        for effect_type, bonus in list(self.player.buffs.items()):
+            if bonus.get("duration", 0) > 0:
+                remove_effect(self.player, effect_type)
+
+        for effect_type, bonus in list(self.player.debuffs.items()):
+            if bonus.get("duration", 0) > 0:
+                remove_effect(self.player, effect_type)
+        
+    
     def activate_passive(self, **kwargs):
         """Aktifkan semua passive skill yang siap digunakan."""
         try:
@@ -77,10 +86,13 @@ class PassiveSkillHandler:
 
                 if self.cooldowns[name] == 0 and self.durations[name] == 0:
                     # Pakai getattr dengan nilai default sebagai pengganti .get()
-                    self.durations[name] = getattr(skill, "duration", 1)
+                    self.durations[name] = getattr(skill, "duration", 0)
 
                     if "next_turn" in getattr(skill, "activation_condition", []):
+                        for effect_type, bonus in list(self.player.buffs.items()):
+                            bonus["duration"] = bonus.get("duration", 0) + 1
                         self.durations[name] += 1
+
 
                     cooldown_val = getattr(skill, "cooldown", 0)
                     self.cooldowns[name] = cooldown_val + 1 if cooldown_val > 0 else 0
@@ -157,7 +169,7 @@ class PassiveSkillHandler:
             if not hasattr(self.player, "skill_handler"):
                 raise SkillHandlerNotFoundError("Player has no skill_handler assigned.")
             
-            self.update_passive(self.player)
+            self.reset_passive()
         except Exception as e:
             print(f"[ERROR] _on_battle_end failed: {e}")
 
@@ -195,8 +207,14 @@ class PassiveSkillHandler:
             raise SkillHandlerNotFoundError("Player has no skill_handler assigned.")
         
         for effect_type, effect_value in skill.effect.items():
-            print(f"[INFO] Menerapkan efek dari skill '{skill.name}': {effect_type} = {effect_value}")
-            self._handle_effect(effect_type, effect_value, **kwargs)
+            effect_copy = effect_value.copy()
+
+            if "next_turn" in getattr(skill, "activation_condition", []):
+                effect_copy["duration"] = effect_copy.get("duration", skill.duration) + 1
+            else:
+                effect_copy["duration"] = effect_copy.get("duration", skill.duration)
+
+            self._handle_effect(effect_type, effect_copy, **kwargs)
 
 
     def _handle_effect(self, effect_type, effect_value, **kwargs):
@@ -210,7 +228,7 @@ class PassiveSkillHandler:
 
         for skill in self.passive_skills:
             if "duration" not in effect_value:
-                effect_value["duration"] = skill.effect_duration
+                effect_value["duration"] = skill.duration
 
         if not handler:
             raise InvalidSkillEffect(f"No handler found for effect type '{effect_type}'.")
