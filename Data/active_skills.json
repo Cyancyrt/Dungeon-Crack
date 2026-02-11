@@ -1,8 +1,8 @@
 {
   "Power Slash": {
-    "description": "Meluncurkan serangan yang memberikan 140% damage (+Attack) ke musuh.",
+    "description": "Meluncurkan serangan yang memberikan 150% damage (+Attack) ke musuh.",
     "cooldown": 2,
-    "damage_multiplier": 1.4,
+    "damage_multiplier": 1.5,
     "aoe": true,
     "effects": {}
   },
@@ -61,12 +61,12 @@
     "cooldown": 1,
     "damage_multiplier": 0,
     "aoe": false,
-    "effects": [
-      {
+    "effects": {
+      "invisible": {
         "type": "invisible",
-        "duration": 1
+        "duration": 2
       }
-    ]
+    }
   },
   "Eagle Eye": {
     "description": "Ketika skill ini diaktifkan, serangan berikutnya memberikan 200% dari serangan pemain ke satu target musuh.",
@@ -74,30 +74,26 @@
     "mana_cost": 5,
     "damage_multiplier": 0,
     "aoe": false,
-    "effects": [
-      {
-        "type": "attack_bonus",
+    "effects": {
+      "attack_bonus": {
+        "activation_condition": ["next_turn"],
         "amount": 200,
         "bonus_type": "percentage",
         "duration": 1
       }
-    ]
+    }
   },
   "Barrier": {
-    "description": "Mengaktifkan perisai yang memblokir 200 damage dan meningkatkan pertahanan sebesar 10 selama perisai aktif.",
-    "cooldown": 2,
+    "description": "Mengaktifkan perisai yang memblokir 20 damage.",
+    "cooldown": 4,
     "damage_multiplier": 0,
     "aoe": false,
-    "effects": [
-      {
-        "type": "shield",
-        "duration": 1
-      },
-      {
-        "type": "defense_bonus",
-        "amount": 10,
-        "condition": "barrier_active"
+    "effects": {
+      "barrier": {
+        "amount": 20,
+        "bonus_type": "flat",
+        "duration": 2
       }
-    ]
+    }
   }
 }

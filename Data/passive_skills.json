@@ -87,13 +87,13 @@
     }
   },
   "Iron Will": {
-    "description": "Setiap kali terkena serangan, meningkatkan pertahanan sebesar 3. Dapat ditumpuk.",
+    "description": "Setiap kali terkena serangan, meningkatkan pertahanan sebesar 1. Dapat ditumpuk.",
     "duration": 0,
     "cooldown": 0,
     "activation_condition": ["on_player_hit"],
     "effect": {
       "defense_bonus": {
-        "amount": 3,
+        "amount": 1,
         "bonus_type": "flat",
         "stackable": "True"
       }

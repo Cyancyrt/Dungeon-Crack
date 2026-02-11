@@ -7,6 +7,7 @@ class ActiveSkillHandler:
         self.player = player
         self.active_skills = player.active_skills  # List skill aktif yang dimiliki pemain
         self.cooldowns = {}  # 🔥 Menyimpan cooldown setiap skill
+        self.durations = {}
         self.event_dispatcher = event_dispatcher
         self._register_event_handlers()
         
@@ -81,12 +82,16 @@ class ActiveSkillHandler:
                 self._apply_skill_effect(skill)
 
             # 🔥 Gunakan skill
-            self.cooldowns[skill_name] = skill.cooldown  # Menggunakan cooldown yang sudah benar tanpa tambahan +1
-            return skill.damage_multiplier
+            self.cooldowns[skill_name] = skill.cooldown  # Set cooldown
+
+            # Ambil damage_multiplier jika ada, default ke 0
+            return getattr(skill, "damage_multiplier", 0)
+
         except SkillNotFound as e:
             print(f"[ERROR] use_skill: {str(e)}")
         except Exception as e:
             print(f"[ERROR] use_skill: {str(e)}")
+
 
 
     def _apply_skill_effect(self, skill):
@@ -99,7 +104,17 @@ class ActiveSkillHandler:
                 raise InvalidSkillEffect(f"Skill {skill.name} tidak memiliki efek yang valid.")
 
             for effect_type, effect_value in skill.effect.items():
-                self._handle_effect(effect_type, effect_value)
+                effect_copy = effect_value.copy()
+                
+                base_duration = effect_value.get("duration", 1)
+                
+                if "next_turn" in effect_value.get("activation_condition", []):
+                    effect_copy["duration"] = effect_copy.get("duration", base_duration) + 1
+                else:
+                    effect_copy["duration"] = effect_copy.get("duration", base_duration)
+
+                self._handle_effect(effect_type, effect_copy)
+
         except InvalidSkillEffect as e:
             print(f"[ERROR] _apply_skill_effect: {str(e)}")
             raise e

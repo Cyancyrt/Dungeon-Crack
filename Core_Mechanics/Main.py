@@ -1,9 +1,6 @@
 import random
 import json
-from UI.interface import GameInterface
-from Hooks.Hooks import clear_screen, naik_lantai
-from Hooks.Event_Dispatch import EventDispatcher
-from Core_Mechanics.Battle import BattleSystem
+from Hooks.Hooks import clear_screen
 from Enemy.enemy_module import Enemy
 from Core_Mechanics.SearchFight import Fight
 

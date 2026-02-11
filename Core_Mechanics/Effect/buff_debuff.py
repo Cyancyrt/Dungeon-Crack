@@ -7,14 +7,45 @@ class StatusHandler:
             # "stun": StatusHandler._stun,
             "heal": StatusHandler._heal,
             "burn": StatusHandler._burn,    
+            "barrier": StatusHandler._barrier,
             # "blind": StatusHandler._blind
+            "invisible": StatusHandler._invisible,
         }
+    
+    @staticmethod
+    def _barrier( effect_type, effect_value, target, **kwargs):
+        if isinstance(effect_value, dict):  # Cek apakah benar dict
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
+        
+        if bonus_type == "percentage":
+            bonus_value = amount / 100  # Konversi ke angka
+        else:
+            bonus_value = amount
+        
+
+        
+        effect_value = {**effect_value, "amount": bonus_value}
+        StatusHandler._apply_Effect(effect_type, effect_value, target,**kwargs)
+        target.buffs["barrier"] = {
+            "amount": bonus_value,
+            "duration": effect_value.get("duration", 1)
+        }
+
+
+    @staticmethod
+    def _invisible(effect_type, effect_value, target, **kwargs):
+        duration = effect_value.get("duration", 1)
+        target.buffs["invisible"] = {
+            "duration": duration
+        }
+        print(f"{target.name} menjadi tidak terlihat selama {duration} turn.")
     
     @staticmethod
     def _burn( effect_type, effect_value,target, **kwargs):
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
         
         if bonus_type == "percentage":
             bonus_value = amount / 100  # Konversi ke angka
@@ -29,8 +60,8 @@ class StatusHandler:
     def _damage_reduction( effect_type, effect_value,target, **kwargs):
         """Meningkatkan akurasi pemain"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
         
         if bonus_type == "percentage":
             bonus_value = amount / 100  # Konversi ke angka
@@ -42,8 +73,8 @@ class StatusHandler:
     @staticmethod
     def _heal( effect_type, effect_value, target, **kwargs):
         if isinstance(effect_value, dict):  # Cek apakah benar dict 
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
         
         if bonus_type == "percentage":
             bonus_value = (target.stats.health * amount) // 100  # Konversi ke angka
@@ -79,8 +110,8 @@ class Buff(StatusHandler):
     def _crit_chance_boost( effect_type, effect_value,target, **kwargs):
         """Meningkatkan akurasi pemain"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
         
         if bonus_type == "percentage":
             bonus_value = (target.stats.crit_chance * amount) // 100  # Konversi ke angka
@@ -97,8 +128,8 @@ class Buff(StatusHandler):
     def _restore_mana(effect_type, effect_value, target,**kwargs):
         """Memulihkan mana berdasarkan jumlah tetap atau persentase"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
 
         restored_mana = (target.stats.max_mp * amount) // 100 if bonus_type == "percentage" else amount
         target.stats.mp = min(target.stats.mp + restored_mana, target.stats.max_mp)
@@ -108,8 +139,8 @@ class Buff(StatusHandler):
     def _boost_attack(effect_type, effect_value,target, **kwargs):
         """Meningkatkan serangan pemain"""     
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
 
         if bonus_type == "percentage":
             bonus_value = (target.stats.attack * amount) // 100  # Konversi ke angka
@@ -125,8 +156,8 @@ class Buff(StatusHandler):
     def _boost_accuracy( effect_type, effect_value,target, **kwargs):
         """Meningkatkan akurasi pemain"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
 
         if bonus_type == "percentage":
             bonus_value = (target.stats.accuracy * amount) // 100  # Konversi ke angka
@@ -141,8 +172,8 @@ class Buff(StatusHandler):
     def _boost_agility(effect_type, effect_value,target, **kwargs):
         """Meningkatkan kecepatan pemain"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
 
         if bonus_type == "percentage":
             bonus_value = (target.stats.agility * amount) // 100  # Konversi ke angka
@@ -158,8 +189,8 @@ class Buff(StatusHandler):
 
         """Meningkatkan pertahanan pemain"""
         if isinstance(effect_value, dict):  # Cek apakah benar dict
-            amount = effect_value.get("amount", 0)  # Ambil nilai atau default 0
-            bonus_type = effect_value.get("bonus_type", "default")  # Ambil atau default
+            amount = effect_value.get("amount", 0)  # Ambil nilai atau flat 0
+            bonus_type = effect_value.get("bonus_type", "flat")  # Ambil atau flat
 
 
         bonus_value = (target.stats.defense * amount) // 100 if bonus_type == "percentage" else amount

@@ -26,6 +26,7 @@ class PassiveSkillHandler:
         self.event_dispatcher.register_event("enemy_defeat", self._on_enemy_defeat)
         self.event_dispatcher.register_event("player_hit", self._on_player_hit)
         self.event_dispatcher.register_event("enemy_hit", self._on_enemy_hit)
+        self.event_dispatcher.register_event("turn_start", self._on_turn_start)
         self.event_dispatcher.register_event("turn_end", self._on_turn_end)
         self.event_dispatcher.register_event("battle_end", self._on_battle_end)
         self.event_dispatcher.register_event("turn_interval", self._on_turn_interval)
@@ -68,11 +69,11 @@ class PassiveSkillHandler:
         self.ActivatedPassive.clear()
 
         for effect_type, bonus in list(self.player.buffs.items()):
-            if bonus.get("duration", 0) > 0:
+            if bonus.get("duration", 0) >= 0:
                 remove_effect(self.player, effect_type)
 
         for effect_type, bonus in list(self.player.debuffs.items()):
-            if bonus.get("duration", 0) > 0:
+            if bonus.get("duration", 0) >= 0:
                 remove_effect(self.player, effect_type)
         
     
@@ -107,9 +108,16 @@ class PassiveSkillHandler:
     
     def _on_battle_start(self, **kwargs):
         try:
+            self.target = kwargs.get("object", None)
             self._apply_skill_effect("on_battle_start", **kwargs)
         except Exception as e:
             print(f"[ERROR] _on_battle_start failed: {e}")
+
+    def _on_turn_start(self,**kwargs):
+        try:
+            self.turn = kwargs.get("turn", None)
+        except Exception as e:
+            print(f"[ERROR] _on_turn_start failed: {e}")
 
     def _on_enemy_defeat(self, **kwargs):
         try:
@@ -135,7 +143,6 @@ class PassiveSkillHandler:
                 raise SkillHandlerNotFoundError("Player has no skill_handler assigned.")
 
             self.update_passive()
-
             if self.player.debuffs:
                 for effect_type, bonus in self.player.debuffs.items():
                     if bonus.get("duration", 0) > 0:
@@ -151,15 +158,15 @@ class PassiveSkillHandler:
         except Exception as e:
             print(f"[ERROR] _on_enemy_hp_threshold failed: {e}")
 
-    def _on_turn_interval(self, turn, **kwargs):
+    def _on_turn_interval(self, **kwargs):
         try:
             if not isinstance(self.passive_skills, list):
                 self.passive_skills = [self.passive_skills]
-            
+                      
             for skill in self.passive_skills:
                 if "turn_interval" in skill.activation_condition:
                     interval = skill.activation_condition.get("turn_interval", 1)
-                    if turn % interval == 0:
+                    if self.turn % interval == 0:
                         self._apply_skill_effect("turn_interval", **kwargs)
         except Exception as e:
             print(f"[ERROR] _on_turn_interval failed: {e}")
@@ -177,7 +184,6 @@ class PassiveSkillHandler:
         if not isinstance(self.passive_skills, list):
             self.passive_skills = [self.passive_skills]
 
-        
         for skill in self.passive_skills:
             try:
                 name = skill.name
@@ -224,7 +230,7 @@ class PassiveSkillHandler:
 
         handler = buff_handlers.get(effect_type) or debuff_handlers.get(effect_type) or effect_handlers.get(effect_type)
 
-        target = effect_value.get("target", self.player)
+        target = self.target if effect_value.get("target") == "enemy" else self.player
 
         for skill in self.passive_skills:
             if "duration" not in effect_value:
@@ -232,11 +238,31 @@ class PassiveSkillHandler:
 
         if not handler:
             raise InvalidSkillEffect(f"No handler found for effect type '{effect_type}'.")
+        
+        is_stackable = effect_value.get("stackable", False)
+        if not is_stackable:
+            return  # Sudah diaplikasikan di turn ini
+        
+        buff = getattr(target, "buffs", {}).get(effect_type, {})
+        if "turn_applied" in buff:
+            if buff["turn_applied"] == self.turn:
+                print(f"[INFO] Effect '{effect_type}' sudah aktif di turn {self.turn}.")
+                return
 
-        if effect_value.get("stackable", "False") == "False" and effect_type in self.player.buffs:
-            return
+        # Jika tidak, cek apakah debuff memiliki turn_applied
+        debuff = getattr(target, "debuffs", {}).get(effect_type, {})
+        if "turn_applied" in debuff:
+            if debuff["turn_applied"] == self.turn:
+                print(f"[INFO] Effect '{effect_type}' sudah aktif di turn {self.turn}.")
+                return
+
 
         try:
             handler(effect_type, effect_value, target=target, **kwargs)
+            # Update ke dalam target buff/debuff
+            if effect_type in target.buffs:
+                target.buffs[effect_type]["turn_applied"] = kwargs.get("turn", None)
+            elif effect_type in target.debuffs:
+                target.debuffs[effect_type]["turn_applied"] = kwargs.get("turn", None)
         except Exception as e:
             raise InvalidSkillEffect(f"Failed to apply effect '{effect_type}': {e}")

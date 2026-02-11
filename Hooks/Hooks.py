@@ -93,7 +93,6 @@ def remove_effect(player, effect_type):
 
     bonus = target_dict[effect_type].get("amount", 0)
     stat_attr = get_stat_from_effect(effect_type)
-
     if stat_attr is not None:
         player.stats.__dict__[stat_attr] -= bonus  # Kurangi efek yang diberikan
 

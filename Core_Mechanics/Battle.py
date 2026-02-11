@@ -16,7 +16,7 @@ class BattleSystem:
     def start_battle(self, games, current_level):
         if self.turn_count == 1 and "battle_start" not in self.event_dispatcher.triggered_events:
             try:
-                self.event_dispatcher.dispatch_event("battle_start")
+                self.event_dispatcher.dispatch_event("battle_start", object=self.enemy)
             except Exception as e:
                 print(f"[ERROR] dispatch_event('battle_start'): {e}")
                 traceback.print_exc()
@@ -24,7 +24,8 @@ class BattleSystem:
         try:
             while self.player.stats.hp > 0 and self.enemy.stats.hp > 0:
                 try:
-                    self.event_dispatcher.dispatch_event("turn_interval", turn=self.turn_count, object=self.enemy)
+                    self.event_dispatcher.dispatch_event("turn_start", turn=self.turn_count)
+                    self.event_dispatcher.dispatch_event("turn_interval", turn=self.turn_count)
                     BattleUI.display_battle_status(self.player, self.enemy, self.turn_count)
                     action = self.handle_turn()
                     if action == "exit_to_menu":

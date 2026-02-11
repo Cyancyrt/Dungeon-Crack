@@ -204,6 +204,7 @@ class CombatHandler:
     def __init__(self, player):
         self.player = player
 
+    
     def crit_chance(self, damage):
         if random.randint(1, 100) <= self.player.stats.crit_chance:
             crit_multiplier = self.player.stats.crit_damage / 100 
@@ -224,27 +225,35 @@ class CombatHandler:
     
         return damage_taken
     
+    def evade_chance(self, enemy):
+        if enemy.buffs.get("invisible", False):
+            print(f"{enemy.name} menghindari semua serangan karena invisible!")
+            return 0
+        return 1  # Lanjutkan serangan
+
     def skill_attack(self, enemy):
+        if self.evade_chance(enemy) == 0:
+            print(f"{enemy.name} evaded the attack!")
+            return 0
+
         damage_mult = self.player.skill_handler.use_active_skill(enemy)
-        damage_reduksi = 0
-        if damage_mult > 0:
-            if self.player.active_skills.mana_cost > 0:
-                self.player.stats.mp -= self.player.active_skills.mana_cost
-            
-            # Kurangi stamina jika ada stamina_cost
-            if self.player.active_skills.stamina_cost > 0:
-                self.player.stats.stamina -= self.player.active_skills.stamina_cost
-            
-            if enemy.buffs.get("damage_reduction"):
-                damage_reduksi = enemy.buffs["damage_reduction"].get("amount", 0)
-                
-                
+        if damage_mult is None or damage_mult <= 0:
+            return 0
+
+        skill = next((s for s in self.player.active_skills if s.name == self.player.skill_handler.last_used), None)
+        if skill:
+            if skill.mana_cost > 0:
+                self.player.stats.mp -= skill.mana_cost
+            if skill.stamina_cost > 0:
+                self.player.stats.stamina -= skill.stamina_cost
+
+        damage_reduksi = enemy.buffs.get("damage_reduction", {}).get("amount", 0)
+
         damage_calc = self.damage_calc(damage_mult)
-        damage_akhir = self.defense_calc(enemy,damage_calc, damage_reduksi)
-        if damage_akhir < 0:
-            damage_akhir = 0
-        enemy.stats.hp = max(0, enemy.stats.hp - damage_akhir)
+        damage_akhir = self.defense_calc(enemy, damage_calc, damage_reduksi)
+        enemy.stats.hp = max(0, enemy.stats.hp - max(0, damage_akhir))
         print(f"{self.player.name} menyerang {enemy.name} dan memberikan {damage_akhir} damage!")
+
 
 
     def basic_attack(self, enemy):
